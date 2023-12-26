@@ -44,26 +44,19 @@ module maindec(
 	output 	wire[1:0] 	aluop
     );
 
-	`define R_TYPE 	~op[5] & ~op[4] & ~op[3] & ~op[2] & ~op[1] & ~op[0]
-	`define LW 		op[5]  & ~op[4] & ~op[3] & ~op[2] & op[1]  & op[0]
-	`define SW 		op[5]  & ~op[4] & op[3]  & ~op[2] & op[1]  & op[0]
-	`define BEQ 	~op[5] & ~op[4] & ~op[3] & op[2]  & ~op[1] & ~op[0]
-	`define J 		~op[5] & ~op[4] & ~op[3] & ~op[2] & op[1]  & ~op[0]
-	`define ADDI 	~op[5] & ~op[4] & op[3]  & ~op[2] & ~op[1] & ~op[0]
+	reg[8:0] controls;
+	always @(*) begin
+		case (op)
+			6'b000000: controls <= 9'b110000010;  // R-TYRE
+			6'b100011: controls <= 9'b101001000;  // LW
+			6'b101011: controls <= 9'b001010000;  // SW
+			6'b000100: controls <= 9'b000100001;  // BEQ
+			6'b001000: controls <= 9'b101000000;  // ADDI
+			6'b000010: controls <= 9'b000000100;  // J
+			default:   controls <= 9'b000000000;  // illegal op
+		endcase
+	end
 
-	assign regdst 	= `R_TYPE;
-	assign alusrc 	= `LW | `SW | `ADDI;
-	assign memtoreg = `LW;
-	assign branch 	= `BEQ;
-	assign jump		= `J;
-	assign memwrite = `SW;
-	assign regwrite = `R_TYPE | `LW | `ADDI;
-
-	// LW/SW:  00
-	// BEQ:    01
-	// R_TYPE: 10
-	// ADDI:   11
-	assign aluop[1] = `R_TYPE | `ADDI;
-	assign aluop[0] = `BEQ | `ADDI;
-
+	assign {regwrite, regdst, alusrc, branch, memwrite, memtoreg, jump, aluop} = controls;
+	
 endmodule

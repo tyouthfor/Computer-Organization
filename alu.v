@@ -46,12 +46,12 @@ module alu(
 	always @(*) begin
 		case (op[2:1])
 			// a+b
-			2'b01:overflow <= a[31] & b[31] & ~s[31] |  // a>0, b>0, s<0
-							~a[31] & ~b[31] & s[31];    // a<0, b<0, s>0
+			2'b01: overflow <= a[31] & b[31] & ~s[31] |  // a>0, b>0, s<0
+							~a[31] & ~b[31] & s[31];     // a<0, b<0, s>0
 			// a-b
-			2'b11:overflow <= ~a[31] & b[31] & s[31] |  // a<0, b>0, s>0
-							a[31] & ~b[31] & ~s[31];    // a>0, b<0, s<0
-			default : overflow <= 1'b0;
+			2'b11: overflow <= ~a[31] & b[31] & s[31] |  // a<0, b>0, s>0
+							a[31] & ~b[31] & ~s[31];     // a>0, b<0, s<0
+			default: overflow <= 1'b0;
 		endcase	
 	end
 endmodule

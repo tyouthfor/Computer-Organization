@@ -32,26 +32,31 @@ module aludec(
 	*/
 	input 	wire[5:0] 	funct,
 	input 	wire[1:0] 	aluop,
-	output 	wire[2:0] 	alucontrol
+	output 	reg [2:0] 	alucontrol
     );
 
-	`define ADD 	aluop[1]  & ~aluop[0] & funct[5] & ~funct[4] & ~funct[3] & ~funct[2] & ~funct[1] & ~funct[0]
-	`define SUB 	aluop[1]  & ~aluop[0] & funct[5] & ~funct[4] & ~funct[3] & ~funct[2] & funct[1]  & ~funct[0]
-	`define AND 	aluop[1]  & ~aluop[0] & funct[5] & ~funct[4] & ~funct[3] & funct[2]  & ~funct[1] & ~funct[0]
-	`define OR  	aluop[1]  & ~aluop[0] & funct[5] & ~funct[4] & ~funct[3] & funct[2]  & ~funct[1] & funct[0]
-	`define SLT 	aluop[1]  & ~aluop[0] & funct[5] & ~funct[4] & funct[3]  & ~funct[2] & funct[1]  & ~funct[0]
-	`define LW  	~aluop[1] & ~aluop[0]
-	`define SW  	~aluop[1] & ~aluop[0]
-	`define BEQ 	~aluop[1] & aluop[0]
-	`define ADDI 	aluop[1]  & aluop[0]
-
-	// add: 010 (ADD, LW/SW, ADDI)
-	// sub: 110 (SUB, BEQ)
-	// and: 000 (AND)
-	// or:  001 (OR)
-	// slt: 111 (SLT)
-	assign alucontrol[2] = `SUB | `BEQ | `SLT;
-	assign alucontrol[1] = `ADD | `LW | `SW | `ADDI | `SUB | `BEQ | `SLT;
-	assign alucontrol[0] = `OR | `SLT;
+	// add: 010
+	// sub: 110
+	// and: 000
+	// or:  001
+	// slt: 111
+	// 011
+	// 100
+	// 101
+	// 最高位: 1-减法, 0-其他
+	always @(*) begin
+		case (aluop)
+			2'b00: alucontrol <= 3'b010;  // LW/SW/ADDI
+			2'b01: alucontrol <= 3'b110;  // BEQ
+			default: case (funct)
+				6'b100000: alucontrol <= 3'b010;  // ADD
+				6'b100010: alucontrol <= 3'b110;  // SUB
+				6'b100100: alucontrol <= 3'b000;  // AND
+				6'b100101: alucontrol <= 3'b001;  // OR
+				6'b101010: alucontrol <= 3'b111;  // SLT
+				default:   alucontrol <= 3'b000;
+			endcase
+		endcase
+	end
 
 endmodule
