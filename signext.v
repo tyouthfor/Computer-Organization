@@ -25,5 +25,5 @@ module signext(
 	output wire[31:0] y
     );
 
-	assign y = {{16{a[15]}},a};
+	assign y = {16'b0,a};
 endmodule

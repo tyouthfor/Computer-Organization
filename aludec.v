@@ -1,24 +1,5 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 2017/10/23 15:27:24
-// Design Name: 
-// Module Name: aludec
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
+`include "defines.vh"
 
 module aludec(
 	/*
@@ -31,30 +12,44 @@ module aludec(
 			alucontrol 	ALU 的选择信号
 	*/
 	input 	wire[5:0] 	funct,
-	input 	wire[1:0] 	aluop,
-	output 	reg [2:0] 	alucontrol
+	input 	wire[3:0] 	aluop,
+	output 	reg [5:0] 	alucontrol
     );
 
-	// add: 010
-	// sub: 110
-	// and: 000
-	// or:  001
-	// slt: 111
-	// 011
-	// 100
-	// 101
-	// 最高位: 1-减法, 0-其他
 	always @(*) begin
 		case (aluop)
-			2'b00: alucontrol <= 3'b010;  // LW/SW/ADDI
-			2'b01: alucontrol <= 3'b110;  // BEQ
+			`aluop_add:			alucontrol <= `alu_add;
+			`aluop_sub:			alucontrol <= `alu_sub;
+			`aluop_slt:			alucontrol <= `alu_slt;
+			`aluop_sltu:		alucontrol <= `alu_sltu;
+			`aluop_and:			alucontrol <= `alu_and;
+			`aluop_LUI:			alucontrol <= `alu_LUI;
+			`aluop_or:			alucontrol <= `alu_or;
+			`aluop_xor:			alucontrol <= `alu_xor;
+
 			default: case (funct)
-				6'b100000: alucontrol <= 3'b010;  // ADD
-				6'b100010: alucontrol <= 3'b110;  // SUB
-				6'b100100: alucontrol <= 3'b000;  // AND
-				6'b100101: alucontrol <= 3'b001;  // OR
-				6'b101010: alucontrol <= 3'b111;  // SLT
-				default:   alucontrol <= 3'b000;
+				`funct_ADD: 	alucontrol <= `alu_add;
+				`funct_ADDU: 	alucontrol <= `alu_add;
+				`funct_SUB: 	alucontrol <= `alu_sub;
+				`funct_SUBU: 	alucontrol <= `alu_sub;
+				`funct_SLT: 	alucontrol <= `alu_slt;
+				`funct_SLTU: 	alucontrol <= `alu_sltu;
+				`funct_DIV: 	alucontrol <= 6'b000000;
+				`funct_DIVU: 	alucontrol <= 6'b000000;
+				`funct_MULT: 	alucontrol <= `alu_mult;
+				`funct_MULTU: 	alucontrol <= `alu_multu;
+				`funct_AND: 	alucontrol <= `alu_and;
+				`funct_NOR: 	alucontrol <= `alu_nor;
+				`funct_OR: 		alucontrol <= `alu_or;
+				`funct_XOR: 	alucontrol <= `alu_xor;
+				`funct_SLLV: 	alucontrol <= `alu_sllv;
+				`funct_SLL: 	alucontrol <= `alu_sll;
+				`funct_SRAV: 	alucontrol <= `alu_sra;
+				`funct_SRAV: 	alucontrol <= `alu_srav;
+				`funct_SRLV: 	alucontrol <= `alu_srlv;
+				`funct_SRL: 	alucontrol <= `alu_srl;
+
+				default:   		alucontrol <= 6'b000000;
 			endcase
 		endcase
 	end

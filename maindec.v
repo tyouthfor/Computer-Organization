@@ -1,24 +1,5 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date: 2017/10/23 15:21:30
-// Design Name: 
-// Module Name: maindec
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
-
+`include "defines.vh"
 
 module maindec(
 	/*
@@ -37,26 +18,58 @@ module maindec(
 			aluop 		传给 aludec 的信号
 	*/
 	input 	wire[5:0] 	op,
-	output 	wire 		memtoreg,memwrite,
-	output 	wire 		branch,alusrc,
-	output 	wire 		regdst,regwrite,
-	output 	wire 		jump,
-	output 	wire[1:0] 	aluop
+	output	wire		regdst, alusrc, memtoreg, branch, jump,
+	output	wire		memwrite, regwrite,
+	output 	reg [3:0] 	aluop
     );
 
-	reg[8:0] controls;
+	reg[6:0] controls;
+	assign {regdst, alusrc, memtoreg, branch, jump, memwrite, regwrite} = controls;
+
 	always @(*) begin
 		case (op)
-			6'b000000: controls <= 9'b110000010;  // R-TYRE
-			6'b100011: controls <= 9'b101001000;  // LW
-			6'b101011: controls <= 9'b001010000;  // SW
-			6'b000100: controls <= 9'b000100001;  // BEQ
-			6'b001000: controls <= 9'b101000000;  // ADDI
-			6'b000010: controls <= 9'b000000100;  // J
-			default:   controls <= 9'b000000000;  // illegal op
+			// R-TYPE
+			`op_RTYPE: 	begin controls <= 7'b1000001; aluop <= `aluop_RTYPE; end
+
+			// I-TYPE 立即数运算
+			`op_ADDI: 	begin controls <= 7'b0100001; aluop <= `aluop_add; end
+			`op_ADDIU: 	begin controls <= 7'b0100001; aluop <= `aluop_add; end
+			`op_SLTI: 	begin controls <= 7'b0100001; aluop <= `aluop_slt; end
+			`op_SLTIU: 	begin controls <= 7'b0100001; aluop <= `aluop_sltu; end
+			`op_ANDI: 	begin controls <= 7'b0100001; aluop <= `aluop_and; end
+			`op_LUI: 	begin controls <= 7'b0100001; aluop <= `aluop_LUI; end
+			`op_ORI: 	begin controls <= 7'b0100001; aluop <= `aluop_or; end
+			`op_XORI: 	begin controls <= 7'b0100001; aluop <= `aluop_xor; end
+			
+			// I-TYPE 分支跳转
+			`op_BEQ: 	begin controls <= 7'b0001000; aluop <= `aluop_sub; end
+			`op_BNE: 	begin controls <= 7'b0001000; aluop <= `aluop_sub; end
+			`op_BGEZ: 	begin controls <= 7'b0001000; aluop <= `aluop_sub; end
+			`op_BLTZ: 	begin controls <= 7'b0001000; aluop <= `aluop_sub; end
+			`op_BLEZ: 	begin controls <= 7'b0001000; aluop <= `aluop_sub; end
+			`op_BGTZ: 	begin controls <= 7'b0001000; aluop <= `aluop_sub; end
+			`op_BGEZ: 	begin controls <= 7'b0001000; aluop <= `aluop_sub; end
+			`op_BGEZAL: begin controls <= 7'b0001000; aluop <= `aluop_sub; end
+			`op_BLTZAL: begin controls <= 7'b0001000; aluop <= `aluop_sub; end
+			
+			// J-TYPE
+			`op_J: 		begin controls <= 7'b0000100; aluop <= 4'b0000; end
+			`op_JAL: 	begin controls <= 7'b0000100; aluop <= 4'b0000; end
+			
+			// I-TYPE 访存
+			`op_LB: 	begin controls <= 7'b0110001; aluop <= `aluop_add; end
+			`op_LBU: 	begin controls <= 7'b0110001; aluop <= `aluop_add; end
+			`op_LH: 	begin controls <= 7'b0110001; aluop <= `aluop_add; end
+			`op_LHU: 	begin controls <= 7'b0110001; aluop <= `aluop_add; end
+			`op_LW: 	begin controls <= 7'b0110001; aluop <= `aluop_add; end
+			`op_SB: 	begin controls <= 7'b0100010; aluop <= `aluop_add; end
+			`op_SH: 	begin controls <= 7'b0100010; aluop <= `aluop_add; end
+			`op_SW: 	begin controls <= 7'b0100010; aluop <= `aluop_add; end
+
+			// 特殊
+
+			default: 	begin controls <= 7'b0000000; aluop <= 4'b0000; end
 		endcase
 	end
-
-	assign {regwrite, regdst, alusrc, branch, memwrite, memtoreg, jump, aluop} = controls;
 	
 endmodule
