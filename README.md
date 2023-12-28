@@ -12,6 +12,7 @@
 #### 数据移动指令与 HILO 寄存器的实现
 
 1. HI/LO 寄存器
+
 首先在数据通路的 ID 阶段添加 HI/LO 寄存器，设计 MFHI 指令在 EX 阶段将从 HI 读出的数据写入寄存器堆，MTHI 指令在 WB 阶段将从寄存器堆读出的数据写入 HI。HI/LO 寄存器输入输出端口如下：
 * 输入
   * srcaW：写入数据。
@@ -20,11 +21,13 @@
   * hiresultD/loresultD：读出数据。
 
 2. mux
+
 * 在数据通路的 ID 阶段增加一个 mux2 选择 hiresultD（MFHI）与 loresultD（MFLO）。
 * 在数据通路的 ID 阶段增加一个 mux2 选择写入寄存器堆的是否为 HI/LO。
 * 在数据通路的 EX 阶段增加一个 mux2，解决数据冒险。
 
 3. 新增的控制信号
+
 * 数据通路需要的信号——
   * hilotoregE：选择写入寄存器堆的数据来源，0-ALU/内存，1-HILO。
   * hiorloD：选择 MFHI 或 MFLO，0-MFHI，1-MFLO。
@@ -45,6 +48,7 @@
   * lowriteD、lowriteE、lowriteM、lowriteW
 
 4. 其他关键点
+
 * 数据移动指令是 R 型指令，而 maindec 中所有 R 型指令产生的控制信号相同。为了在执行移动指令时产生正确的 hilotoreg 等信号，在 maindec 中引入 funct。
 
 #### 参与贡献
