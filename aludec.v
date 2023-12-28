@@ -44,8 +44,8 @@ module aludec(
 				`funct_XOR: 	alucontrol <= `alu_xor;
 				`funct_SLLV: 	alucontrol <= `alu_sllv;
 				`funct_SLL: 	alucontrol <= `alu_sll;
-				`funct_SRAV: 	alucontrol <= `alu_sra;
 				`funct_SRAV: 	alucontrol <= `alu_srav;
+				`funct_SRA:		alucontrol <= `alu_sra;
 				`funct_SRLV: 	alucontrol <= `alu_srlv;
 				`funct_SRL: 	alucontrol <= `alu_srl;
 

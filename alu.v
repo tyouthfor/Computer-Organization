@@ -29,8 +29,8 @@ module alu(
 			`alu_xor: 		y <= a ^ b;
 			`alu_sllv: 		y <= b << a[4:0];
 			`alu_sll: 		y <= b << shamt;
-			`alu_srav: 		y <= b >>> a[4:0];
-			`alu_sra: 		y <= b >>> shamt;
+			`alu_srav: 		y <= $signed(b) >>> a[4:0];
+			`alu_sra: 		y <= $signed(b) >>> shamt;
 			`alu_srlv: 		y <= b >> a[4:0];
 			`alu_srl: 		y <= b >> shamt;
 			`alu_LUI:		y <= {b[15:0], 16'b0};
