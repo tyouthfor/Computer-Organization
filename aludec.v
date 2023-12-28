@@ -34,8 +34,8 @@ module aludec(
 				`funct_SUBU: 	alucontrol <= `alu_sub;
 				`funct_SLT: 	alucontrol <= `alu_slt;
 				`funct_SLTU: 	alucontrol <= `alu_sltu;
-				`funct_DIV: 	alucontrol <= 6'b000000;
-				`funct_DIVU: 	alucontrol <= 6'b000000;
+				`funct_DIV: 	alucontrol <= 0;
+				`funct_DIVU: 	alucontrol <= 0;
 				`funct_MULT: 	alucontrol <= `alu_mult;
 				`funct_MULTU: 	alucontrol <= `alu_multu;
 				`funct_AND: 	alucontrol <= `alu_and;
@@ -49,7 +49,7 @@ module aludec(
 				`funct_SRLV: 	alucontrol <= `alu_srlv;
 				`funct_SRL: 	alucontrol <= `alu_srl;
 
-				default:   		alucontrol <= 6'b000000;
+				default:   		alucontrol <= 0;
 			endcase
 		endcase
 	end

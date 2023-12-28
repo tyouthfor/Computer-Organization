@@ -1,62 +1,63 @@
 `timescale 1ns / 1ps
 
 module mips(
-	input wire clk,rst,
-	output wire[31:0] pcF,
-	input wire[31:0] instrF,
-	output wire memwriteM,
-	output wire[31:0] aluoutM,writedataM,
-	input wire[31:0] readdataM 
+	input 	wire 		clk, rst,
+	output 	wire[31:0] 	pcF,
+	input 	wire[31:0] 	instrF,
+	output 	wire 		memwriteM,
+	output 	wire[31:0] 	aluoutM, writedataM,
+	input 	wire[31:0] 	readdataM 
     );
 	
-	wire [5:0] opD,functD;
-	wire regdstE,alusrcE,pcsrcD,memtoregE,memtoregM,memtoregW,
-			regwriteE,regwriteM,regwriteW;
-	wire [5:0] alucontrolE;
-	wire flushE,equalD;
+	wire[5:0] 			opD, functD;
+	wire 				regdstE, alusrcE, pcsrcD, memtoregE, memtoregM, memtoregW;
+	wire				regwriteE, regwriteM, regwriteW;
+	wire				hilotoregD, hiorloD, hilotoregE, hiorloE, hiwriteM, lowriteM, hiwriteW, lowriteW;
+	wire[5:0] 			alucontrolE;
+	wire 				flushE, equalD;
 
 	controller c(
-		clk,rst,
-		//decode stage
-		opD,functD,
-		pcsrcD,branchD,equalD,jumpD,
-		
-		//execute stage
+		clk, rst,
+		// ID
+		opD, functD,
+		pcsrcD, branchD, equalD, jumpD, 
+		hilotoregD, hiorloD,
+		// EX
 		flushE,
-		memtoregE,alusrcE,
-		regdstE,regwriteE,	
+		memtoregE, alusrcE,
+		regdstE, regwriteE,	
 		alucontrolE,
-
-		//mem stage
-		memtoregM,memwriteM,
-		regwriteM,
-		//write back stage
-		memtoregW,regwriteW
-		);
+		hilotoregE, hiorloE,
+		// ME
+		memtoregM, memwriteM, regwriteM,
+		hiwriteM, lowriteM,
+		// WB
+		memtoregW, regwriteW, 
+		hiwriteW, lowriteW
+	);
 	datapath dp(
-		clk,rst,
-		//fetch stage
+		clk, rst,
+		// IF
 		pcF,
 		instrF,
-		//decode stage
-		pcsrcD,branchD,
-		jumpD,
+		// ID
+		pcsrcD, branchD, jumpD,
+		hilotoregD, hiorloD,
 		equalD,
-		opD,functD,
-		//execute stage
-		memtoregE,
-		alusrcE,regdstE,
-		regwriteE,
+		opD, functD,
+		// EX
+		regdstE, alusrcE, memtoregE, regwriteE,
+		hilotoregE, hiorloE,
 		alucontrolE,
 		flushE,
-		//mem stage
-		memtoregM,
-		regwriteM,
-		aluoutM,writedataM,
+		// ME
+		memtoregM, regwriteM,
+		hiwriteM, lowriteM,
 		readdataM,
-		//writeback stage
-		memtoregW,
-		regwriteW
-	    );
+		aluoutM, writedataM,
+		// WB
+		memtoregW, regwriteW,
+		hiwriteW, lowriteW
+	);
 	
 endmodule
