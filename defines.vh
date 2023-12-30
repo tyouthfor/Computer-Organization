@@ -37,10 +37,10 @@
 `define funct_SUBU      6'b100011
 `define funct_SLT       6'b101010
 `define funct_SLTU      6'b101011
-`define funct_DIV       6'b011010
-`define funct_DIVU      6'b011011
 `define funct_MULT      6'b011000
 `define funct_MULTU     6'b011001
+`define funct_DIV       6'b011010
+`define funct_DIVU      6'b011011
 `define funct_AND       6'b100100
 `define funct_NOR       6'b100111
 `define funct_OR        6'b100101
@@ -92,3 +92,7 @@
 `define alu_srl         6'b010001
 `define alu_LUI         6'b010010
 
+`define DivFree         2'b00
+`define DivByZero       2'b01
+`define DivOn           2'b10
+`define DivEnd          2'b11

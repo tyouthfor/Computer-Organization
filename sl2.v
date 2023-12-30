@@ -5,6 +5,6 @@ module sl2(
 	output 	wire[31:0] 	y
     );
 
-	assign y = {a[29:0],2'b00};
+	assign y = {a[29:0], 2'b00};
 	
 endmodule

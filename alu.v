@@ -19,10 +19,8 @@ module alu(
 		case (op)
 			`alu_add: 		y <= a + b;
 			`alu_sub: 		y <= a - b;
-			`alu_slt: 		y <= $signed(a) < $signed(b) ? a : b;
-			`alu_sltu: 		y <= a < b ? a : b;
-			`alu_mult: 		y <= $signed(a) * $signed(b);
-			`alu_multu: 	y <= {32'b0, a} * {32'b0, b};
+			`alu_slt: 		y <= $signed(a) < $signed(b) ? 1 : 0;
+			`alu_sltu: 		y <= a < b ? 1 : 0;
 			`alu_and: 		y <= a & b;
 			`alu_nor: 		y <= ~(a | b);
 			`alu_or: 		y <= a | b;
