@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+<<<<<<< HEAD
 `include "defines.vh"
 
 module eqcmp(
@@ -28,5 +29,14 @@ module eqcmp(
 		default: y = 0;
 		endcase
 	end
+=======
+
+module eqcmp(
+	input 	wire[31:0] 	a, b,
+	output 	wire 		y
+    );
+
+	assign y = (a == b) ? 1 : 0;
+>>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 
 endmodule
