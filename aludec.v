@@ -6,17 +6,10 @@ module aludec(
 		模块名称: aludec
 		模块功能: ALU 译码器
 		输入:
-<<<<<<< HEAD
-			funct 		instr[5:0]
-			aluop 		maindec 的输出
-		输出:
-			alucontrol 	ALU 的选择信号
-=======
 			funct 			instr[5:0]
 			aluop 			maindec 的输出
 		输出:
 			alucontrol 		ALU 的选择信号
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 	*/
 	input 	wire[5:0] 	funct,
 	input 	wire[3:0] 	aluop,
@@ -55,10 +48,6 @@ module aludec(
 				`funct_SRA:		alucontrol <= `alu_sra;
 				`funct_SRLV: 	alucontrol <= `alu_srlv;
 				`funct_SRL: 	alucontrol <= `alu_srl;
-<<<<<<< HEAD
-
-=======
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 				default:   		alucontrol <= 0;
 			endcase
 		endcase
