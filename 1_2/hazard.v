@@ -18,13 +18,6 @@ module hazard(
 			(3) EX
 			forwardaE 	选择 ALU 模块第一操作数来源, 00-srcaE, 01-resultW, 10-aluoutM
 			forwardbE 	选择 ALU 模块第二操作数来源, 00-srcbE, 01-resultW, 10-aluoutM
-<<<<<<< HEAD
-			flushE 		1-ID/EX 流水线暂停, 0-ID/EX 流水线暂停
-	*/
-
-	// IF
-	output 	wire 		stallF,
-=======
 			stallE		1-ID/EX 流水线暂停, 0-ID/EX 流水线工作
 			flushE 		1-ID/EX 流水线冲刷, 0-ID/EX 流水线工作
 
@@ -34,43 +27,24 @@ module hazard(
 
 	// IF
 	output 	wire 		stallF, flushF,
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 	// ID
 	input 	wire[4:0] 	rsD, rtD, rdD,
 	input 	wire 		branchD, hilotoregD,
 	output 	wire 		forwardaD, forwardbD,
-<<<<<<< HEAD
-	output 	wire 		stallD,
-=======
 	output 	wire 		stallD, flushD,
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 	// EX
 	input 	wire[4:0] 	rsE, rtE,
 	input 	wire[4:0] 	writeregE,
 	input 	wire 		regwriteE, memtoregE,
 	input	wire		hilotoregE, hiorloE,
-<<<<<<< HEAD
-	output 	reg [1:0] 	forwardaE, forwardbE,
-	output	wire		forwardhiloE,
-	output 	wire 		flushE,
-=======
 	input	wire		isdivE, divreadyE,
 	output 	reg [1:0] 	forwardaE, forwardbE,
 	output	reg [1:0]	forwardhiloE,
 	output 	wire 		stallE, flushE,
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 	// ME
 	input 	wire[4:0] 	writeregM,
 	input 	wire 		regwriteM, memtoregM,
 	input	wire		hiwriteM, lowriteM,
-<<<<<<< HEAD
-	// WB
-	input 	wire[4:0] 	writeregW,
-	input 	wire 		regwriteW
-    );
-
-	wire 				lwstallD, branchstallD, mfhistallD;
-=======
 	input	wire		ismultM, isdivM,
 	output	wire		stallM, flushM,
 	// WB
@@ -80,7 +54,6 @@ module hazard(
     );
 
 	wire 				lwstallD, branchstallD, mfhistallD, divstallE;
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 	
 	// forwarding 解决 ALU 的 RAW 数据冒险
 		// (1) ADD, ADD/LW -- aluoutM (ME --> EX)
@@ -97,11 +70,7 @@ module hazard(
 			end 
 			else if (rsE == writeregW & regwriteW) begin
 				forwardaE = 2'b01;  // resultW
-<<<<<<< HEAD
-			end 
-=======
 			end
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 			else begin
 				forwardaE = 2'b00;
 			end
@@ -120,11 +89,7 @@ module hazard(
 			else begin
 				forwardbE = 2'b00;
 			end
-<<<<<<< HEAD
-		end 
-=======
 		end
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 		else begin
 			forwardbE = 2'b00;
 		end
@@ -143,14 +108,6 @@ module hazard(
 	assign forwardaD = (rsD != 0 & rsD == writeregM & regwriteM);
 	assign forwardbD = (rtD != 0 & rtD == writeregM & regwriteM);
 
-<<<<<<< HEAD
-	// forwarding 解决 MFHI 的 RAW 数据冒险
-		// (1) MTHI, MFHI -- srcaM
-		//     MTHI: IF ID EX ME WB
-		//     MFHI:    IF ID EX ME WB
-	assign forwardhiloE = (hiwriteM & hilotoregE & hiorloE == 1'b0 |
-						   lowriteM & hilotoregE & hiorloE == 1'b1);
-=======
 	// forwarding 解决 HILO 的 RAW 数据冒险
 		// (1) DIV, MFHI -- multdivresultM (ME --> EX)
 		//     DIV:  IF ID EX ME WB
@@ -172,7 +129,6 @@ module hazard(
 			forwardhiloE <= 2'b00;  // hiloresultaE
 		end
 	end
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 
 	// stall 解决 ALU 的 RAW 数据冒险
 		// (1) LW, ADD
@@ -201,18 +157,6 @@ module hazard(
 	assign #1 mfhistallD = hilotoregD &
 				(regwriteM & (writeregM == rdD) |
 				 regwriteE & (writeregE == rdD));
-<<<<<<< HEAD
-	
-	// stallD & stallF: 流水线暂停, 寄存器中的值保持不变
-	// flushE: 流水线刷新, 寄存器中的值清零
-	// Note: not necessary to stall D stage on store
-  	//       if source comes from load;
-  	//       instead, another bypass network could
-  	//       be added from W to M
-	assign #1 stallD = lwstallD | branchstallD | mfhistallD;
-	assign #1 stallF = stallD;
-	assign #1 flushE = stallD;
-=======
 
 	// 除法器流水线暂停
 	assign #1 divstallE = isdivE & ~divreadyE;
@@ -230,6 +174,5 @@ module hazard(
 	assign #1 flushE = lwstallD | branchstallD | mfhistallD;
 	assign #1 flushM = divstallE;
 	assign #1 flushW = 1'b0;
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 	
 endmodule

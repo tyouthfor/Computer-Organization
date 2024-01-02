@@ -9,55 +9,33 @@ module mips(
 	input 	wire[31:0] 	readdataM 
     );
 	
-<<<<<<< HEAD
-	//D½×¶Î
-	wire[5:0] 			opD;
-	wire                pcsrcD;
-	wire 				regdstE, alusrcE, memtoregE, memtoregM, memtoregW;
-	wire				regwriteE, regwriteM, regwriteW;
-	wire				hilotoregD, hiorloD, hilotoregE, hiorloE, hiwriteM, lowriteM, hiwriteW, lowriteW;
-	wire[5:0] 			alucontrolE;
-	wire 				flushE, equalD;
-=======
-	wire[5:0] 			opD, functD;
+	wire[5:0] 			opD, functD, rtD;
 	wire 				regdstE, alusrcE, pcsrcD, memtoregE, memtoregM, memtoregW;
 	wire				regwriteE, regwriteM, regwriteW;
 	wire				hilotoregD, hiorloD, hilotoregE, hiorloE, hiwriteM, lowriteM, hiwriteW, lowriteW;
 	wire				immseD;
 	wire				ismultE, ismultM, ismultW, isdivE, isdivM, isdivW, signedmultE, signeddivE;
 	wire[5:0] 			alucontrolE;
-	wire 				equalD;
+	wire 				branchD, equalD, jumpD, jumpregD;
+	wire				linkregE, linkdataW;
 	wire				stallE, flushE, stallM, flushM, stallW, flushW;
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 
 	controller c(
 		clk, rst,
 		// ID
-		opD, functD,
-		pcsrcD, branchD, equalD, jumpD, 
+		opD, functD, rtD,
+		pcsrcD, branchD, equalD, jumpD, jumpregD,
 		hilotoregD, hiorloD,
-<<<<<<< HEAD
-		// EX
-		flushE,
-=======
 		immseD,
 		// EX
 		stallE, flushE,
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 		memtoregE, alusrcE,
 		regdstE, regwriteE,	
 		alucontrolE,
 		hilotoregE, hiorloE,
-<<<<<<< HEAD
-		// ME
-		memtoregM, memwriteM, regwriteM,
-		hiwriteM, lowriteM,
-		// WB
-		memtoregW, regwriteW, 
-		hiwriteW, lowriteW
-=======
 		ismultE, signedmultE,
 		isdivE, signeddivE,
+		linkregE,
 		// ME
 		stallM, flushM,
 		memtoregM, memwriteM, regwriteM,
@@ -67,8 +45,8 @@ module mips(
 		stallW, flushW,
 		memtoregW, regwriteW, 
 		hiwriteW, lowriteW,
-		ismultW, isdivW
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
+		ismultW, isdivW,
+		linkdataW
 	);
 	datapath dp(
 		clk, rst,
@@ -76,31 +54,18 @@ module mips(
 		pcF,
 		instrF,
 		// ID
-		pcsrcD, branchD, jumpD,
+		pcsrcD, branchD, jumpD, jumpregD,
 		hilotoregD, hiorloD,
-<<<<<<< HEAD
-=======
 		immseD,
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 		equalD,
-		opD, functD,
+		opD, functD, rtD,
 		// EX
 		regdstE, alusrcE, memtoregE, regwriteE,
 		hilotoregE, hiorloE,
 		alucontrolE,
-<<<<<<< HEAD
-		flushE,
-		// ME
-		memtoregM, regwriteM,
-		hiwriteM, lowriteM,
-		readdataM,
-		aluoutM, writedataM,
-		// WB
-		memtoregW, regwriteW,
-		hiwriteW, lowriteW
-=======
 		ismultE, signedmultE,
 		isdivE, signeddivE,
+		linkregE,
 		stallE, flushE,
 		// ME
 		memtoregM, regwriteM,
@@ -113,8 +78,8 @@ module mips(
 		memtoregW, regwriteW,
 		hiwriteW, lowriteW,
 		ismultW, isdivW,
+		linkdataW,
 		stallW, flushW
->>>>>>> bd6c523bc0c774f6d9f1648bdb15b37b8b2284a9
 	);
 	
 endmodule
