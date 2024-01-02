@@ -51,6 +51,7 @@ module datapath(
 	// EX
 	wire [1:0] 			forwardaE, forwardbE;
 	wire [4:0] 			rsE, rtE, rdE, shamtE;
+	wire [5:0]			opE;
 	wire [4:0] 			writeregE, writereg_brE, writeregWE;
 	wire [31:0] 		srcaE, srca2E, srcbE, srcb2E, srcb3E;
 	wire [31:0] 		signimmE;
@@ -64,15 +65,18 @@ module datapath(
 	// ME
 	wire [4:0] 			writereg_brM;
 	wire [31:0]			srcaM;
+	wire [5:0]			opM;
 	wire [63:0]			multdivresultM;
 	wire [31:0] 		pcplus8M;
 	// WB
 	wire [4:0] 			writereg_brW;
+	wire [5:0]			opW;
 	wire [31:0] 		aluoutW, readdataW, result_nolinkW, resultW;
 	wire [31:0]			srcaW;
 	wire [63:0]			multdivresultW;
 	wire [31:0]			hiwritedataW, lowritedataW;
 	wire [31:0] 		pcplus8W;
+	wire [31:0]			lwresultW;
 
 	hazard h(
 		// IF
@@ -160,6 +164,7 @@ module datapath(
 	flopenrc 	#(5) 	r7E(clk, rst, ~stallE, flushE, shamtD, shamtE);
 	flopenrc	#(32)	r8E(clk, rst, ~stallE, flushE, hiloresultaD, hiloresultaE);
 	flopenrc	#(32)	r9E(clk, rst, ~stallE, flushE, pcplus8D, pcplus8E);
+	flopenrc	#(6)	r10E(clk, rst, ~stallE, flushE, opD, opE);
 
 	// (2) ALU
 	mux3 		#(32) 	forwardaemux(srcaE, resultW, aluoutM, forwardaE, srca2E);
@@ -187,7 +192,8 @@ module datapath(
 	flopenrc	#(32)	r4M(clk, rst, ~stallM, flushM, srcaE, srcaM);
 	flopenrc	#(64)	r5M(clk, rst, ~stallM, flushM, multdivresultE, multdivresultM);
 	flopenrc	#(32)	r6M(clk, rst, ~stallM, flushM, pcplus8E, pcplus8M);
-
+	flopenrc	#(6)	r7M(clk, rst, ~stallM, flushM, opE, opM);
+	
 	// 5.WB
 	// (1) 流水线寄存器
 	flopenrc 	#(32) 	r1W(clk, rst, ~stallW, flushW, aluoutM, aluoutW);
@@ -196,9 +202,11 @@ module datapath(
 	flopenrc	#(32)	r4W(clk, rst, ~stallW, flushW, srcaM, srcaW);
 	flopenrc	#(64)	r5W(clk, rst, ~stallW, flushW, multdivresultM, multdivresultW);
 	flopenrc	#(32)	r6W(clk, rst, ~stallW, flushW, pcplus8M, pcplus8W);
+	flopenrc	#(6)	r7W(clk, rst, ~stallW, flushW, opM, opW);
 
 	// (2) 写寄存器数据选择器
-	mux2 		#(32) 	res1mux(aluoutW, readdataW, memtoregW, result_nolinkW);
+	lw_sel				lwsel(aluoutW, readdataW, opW, lwresultW);
+	mux2 		#(32) 	res1mux(aluoutW, lwresultW, memtoregW, result_nolinkW);
 	mux2		#(32)	res2mux(result_nolinkW, pcplus8W, linkdataW, resultW);
 
 endmodule
