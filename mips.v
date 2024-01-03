@@ -12,7 +12,6 @@ module mips(
 	wire[5:0] 			opD, functD, rtD;
 	wire 				regdstE, alusrcE, pcsrcD, memtoregE, memtoregM, memtoregW;
 	wire				regwriteE, regwriteM, regwriteW;
-	wire				memenD, memenE, memenM;
 	wire				hilotoregD, hiorloD, hilotoregE, hiorloE, hiwriteM, lowriteM, hiwriteW, lowriteW;
 	wire				immseD;
 	wire				ismultE, ismultM, ismultW, isdivE, isdivM, isdivW, signedmultE, signeddivE;
@@ -25,13 +24,13 @@ module mips(
 		clk, rst,
 		// ID
 		opD, functD, rtD,
-		pcsrcD, branchD, equalD, jumpD, jumpregD, memenD,
+		pcsrcD, branchD, equalD, jumpD, jumpregD,
 		hilotoregD, hiorloD,
 		immseD,
 		// EX
 		stallE, flushE,
 		memtoregE, alusrcE,
-		regdstE, regwriteE, memenE,	
+		regdstE, regwriteE,	
 		alucontrolE,
 		hilotoregE, hiorloE,
 		ismultE, signedmultE,
@@ -39,7 +38,7 @@ module mips(
 		linkregE,
 		// ME
 		stallM, flushM,
-		memtoregM, regwriteM, memenM,
+		memtoregM, regwriteM,
 		hiwriteM, lowriteM,
 		ismultM, isdivM,
 		// WB

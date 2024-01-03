@@ -198,7 +198,7 @@ module datapath(
 	flopenrc	#(32)	r6M(clk, rst, ~stallM, flushM, pcplus8E, pcplus8M);
 	flopenrc	#(6)	r7M(clk, rst, ~stallM, flushM, opE, opM);
 	
-	// (2) store 写内存
+	// (2) store 写使能信号与写入数据
 	sw_sel              swsel(aluoutM, opM, memwriteM);
 	
 	assign writedata2M = (opM == `op_SB) ? {{writedataM[7:0]}, {writedataM[7:0]}, {writedataM[7:0]}, {writedataM[7:0]}} : 
