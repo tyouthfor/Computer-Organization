@@ -4,8 +4,8 @@ module mips(
 	input 	wire 		clk, rst,
 	output 	wire[31:0] 	pcF,
 	input 	wire[31:0] 	instrF,
+	output 	wire[3:0] 	memwriteM,
 	output 	wire[31:0] 	aluoutM, writedataM,
-	output  wire[3:0]  memwriteM,
 	input 	wire[31:0] 	readdataM 
     );
 	
@@ -16,7 +16,6 @@ module mips(
 	wire				hilotoregD, hiorloD, hilotoregE, hiorloE, hiwriteM, lowriteM, hiwriteW, lowriteW;
 	wire				immseD;
 	wire				ismultE, ismultM, ismultW, isdivE, isdivM, isdivW, signedmultE, signeddivE;
-//	wire[3:0]                memwriteM;
 	wire[5:0] 			alucontrolE;
 	wire 				branchD, equalD, jumpD, jumpregD;
 	wire				linkregE, linkdataW;

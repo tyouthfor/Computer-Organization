@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`include "defines.vh"
 
 module datapath(
 	input 	wire 		clk, rst,
@@ -24,8 +25,9 @@ module datapath(
 	input	wire		hiwriteM, lowriteM,
 	input	wire		ismultM, isdivM,
 	input 	wire[31:0] 	readdataM,
-	output 	wire[31:0] 	aluoutM, writedata2M,
-	output  wire[3:0]   memwriteM,
+	output 	wire[31:0] 	aluoutM,
+	output  wire[31:0]	writedata2M,
+	output 	wire[3:0]	memwriteM,
 	output	wire		stallM, flushM,
 	// WB
 	input 	wire 		memtoregW, regwriteW,
@@ -52,7 +54,7 @@ module datapath(
 	// EX
 	wire [1:0] 			forwardaE, forwardbE;
 	wire [4:0] 			rsE, rtE, rdE, shamtE;
-	wire [5:0]          opE;
+	wire [5:0]			opE;
 	wire [4:0] 			writeregE, writereg_brE, writeregWE;
 	wire [31:0] 		srcaE, srca2E, srcbE, srcb2E, srcb3E;
 	wire [31:0] 		signimmE;
@@ -117,30 +119,30 @@ module datapath(
 	assign functD = instrD[5:0];
 
 	// 1.IF
-	// (1) PC ï¿½ï¿½ PC + 4
+	// (1) PC Óë PC + 4
 	pc 			#(32) 	pcreg(clk, rst, ~stallF, pcnextFD, pcF);
 	adder 				pcadd1(pcF, 32'b100, pcplus4F);
 	adder				pcadd2(pcF, 32'b1000, pcplus8F);
 
 	// 2.ID
-	// (1) ï¿½ï¿½Ë®ï¿½ß¼Ä´ï¿½ï¿½ï¿½
+	// (1) Á÷Ë®Ïß¼Ä´æÆ÷
 	flopenrc 	#(32) 	r1D(clk, rst, ~stallD, flushD, pcplus4F, pcplus4D);
 	flopenrc 	#(32) 	r2D(clk, rst, ~stallD, flushD, instrF, instrD);
 	flopenrc 	#(32) 	r4D(clk, rst, ~stallD, flushD, pcplus8F, pcplus8D);
 
-	// (2) ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½
+	// (2) ¼Ä´æÆ÷¶Ñ
 	mux2		#(32)	hiloregmux(writereg_brW, writereg_brE, hilotoregE, writeregWE);
 	mux2		#(32)	hilodatamux(resultW, hiloresultbE, hilotoregE, resultWE);
 	regfile 			rf(clk, regwriteW, rsD, rtD, writeregWE, resultWE, srcaD, srcbD);
 
-	// (3) HILO ï¿½Ä´ï¿½ï¿½ï¿½
+	// (3) HILO ¼Ä´æÆ÷
 	mux2		#(32)	himux(srcaW, multdivresultW[63:32], ismultW | isdivW, hiwritedataW);
 	mux2		#(32)	lomux(srcaW, multdivresultW[31:0], ismultW | isdivW, lowritedataW);
 	HILO				hi(clk, hiwriteW, hiwritedataW, hiresultD);
 	HILO 				lo(clk, lowriteW, lowritedataW, loresultD);
 	mux2		#(32)	hiorlomux(hiresultD, loresultD, hiorloD, hiloresultaD);
 
-	// (4) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¹
+	// (4) Á¢¼´ÊýÀ©Õ¹
 	signext 			se(instrD[15:0], immseD, signimmD);
 
 	// (5) PC next
@@ -150,13 +152,13 @@ module datapath(
 	mux2 		#(32) 	pcjdmux(pcnextbrFD, {pcplus4D[31:28], instrD[25:0], 2'b00}, jumpD, pcnextjdFD);
 	mux2		#(32)	pcjrmux(pcnextjdFD, srca2D, jumpregD, pcnextFD);
 
-	// (6) branch ï¿½È½ï¿½
+	// (6) branch ±È½Ï
 	mux2 		#(32) 	forwardamux(srcaD, aluoutM, forwardaD, srca2D);
 	mux2 		#(32) 	forwardbmux(srcbD, aluoutM, forwardbD, srcb2D);
 	eqcmp 				comp(srca2D, srcb2D, opD, rtD, equalD);
 
 	// 3.EX
-	// (1) ï¿½ï¿½Ë®ï¿½ß¼Ä´ï¿½ï¿½ï¿½
+	// (1) Á÷Ë®Ïß¼Ä´æÆ÷
 	flopenrc	#(32)	r1E(clk, rst, ~stallE, flushE, srcaD, srcaE);
 	flopenrc 	#(32) 	r2E(clk, rst, ~stallE, flushE, srcbD, srcbE);
 	flopenrc 	#(32) 	r3E(clk, rst, ~stallE, flushE, signimmD, signimmE);
@@ -166,7 +168,7 @@ module datapath(
 	flopenrc 	#(5) 	r7E(clk, rst, ~stallE, flushE, shamtD, shamtE);
 	flopenrc	#(32)	r8E(clk, rst, ~stallE, flushE, hiloresultaD, hiloresultaE);
 	flopenrc	#(32)	r9E(clk, rst, ~stallE, flushE, pcplus8D, pcplus8E);
-	flopenrc 	#(6) 	r10E(clk, rst, ~stallE, flushE, opD, opE);
+	flopenrc	#(6)	r10E(clk, rst, ~stallE, flushE, opD, opE);
 
 	// (2) ALU
 	mux3 		#(32) 	forwardaemux(srcaE, resultW, aluoutM, forwardaE, srca2E);
@@ -174,47 +176,47 @@ module datapath(
 	mux2 		#(32) 	srcbmux(srcb2E, signimmE, alusrcE, srcb3E);
 	alu 				alu(srca2E, srcb3E, shamtE, alucontrolE, aluoutE);
 
-	// (3) ï¿½Ë³ï¿½ï¿½ï¿½ï¿½ï¿½
+	// (3) ³Ë³ý·¨Æ÷
 	mult				mult(srca2E, srcb3E, signedmultE, multresultE);
 	div					div(clk, rst, signeddivE, srca2E, srcb3E, isdivE & ~divreadyE, 1'b0, divresultE, divreadyE);
 	mux2		#(64)	multordivmux(multresultE, divresultE, isdivE, multdivresultE);
 
-	// (4) Ð´ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½
+	// (4) Ð´¼Ä´æÆ÷ºÅÑ¡ÔñÆ÷
 	mux2 		#(5) 	wr1mux(rtE, rdE, regdstE, writeregE);
 	mux2		#(5)	wr2mux(writeregE, 5'b11111, linkregE, writereg_brE);
 
-	// (5) MFHI/MFLO Ð´ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½
+	// (5) MFHI/MFLO Ð´¼Ä´æÆ÷Êý¾ÝÑ¡ÔñÆ÷
 	mux4		#(32)	forwardhilomux(hiloresultaE, multdivresultM[63:32], multdivresultM[31:0], srcaM, forwardhiloE, hiloresultbE);
 
 	// 4.ME
-	// (1) ï¿½ï¿½Ë®ï¿½ß¼Ä´ï¿½ï¿½ï¿½
+	// (1) Á÷Ë®Ïß¼Ä´æÆ÷
 	flopenrc 	#(32) 	r1M(clk, rst, ~stallM, flushM, srcb2E, writedataM);
 	flopenrc	#(32) 	r2M(clk, rst, ~stallM, flushM, aluoutE, aluoutM);
 	flopenrc 	#(5) 	r3M(clk, rst, ~stallM, flushM, writereg_brE, writereg_brM);
 	flopenrc	#(32)	r4M(clk, rst, ~stallM, flushM, srcaE, srcaM);
 	flopenrc	#(64)	r5M(clk, rst, ~stallM, flushM, multdivresultE, multdivresultM);
 	flopenrc	#(32)	r6M(clk, rst, ~stallM, flushM, pcplus8E, pcplus8M);
-	flopenrc 	#(6) 	r7M(clk, rst, ~stallM, flushM, opE, opM);
+	flopenrc	#(6)	r7M(clk, rst, ~stallM, flushM, opE, opM);
 	
+	// (2) store Ð´ÄÚ´æ
 	sw_sel              swsel(aluoutM, opM, memwriteM);
 	
-	assign writedata2M = (opM == `op_SB)? {{writedataM[7:0]},{writedataM[7:0]},{writedataM[7:0]},{writedataM[7:0]}}:
-						(opM ==  `op_SH)? {{writedataM[15:0]},{writedataM[15:0]}}:
-						(opM == `op_SW)? {{writedataM[31:0]}}:
-						writedataM;
-
+	assign writedata2M = (opM == `op_SB) ? {{writedataM[7:0]}, {writedataM[7:0]}, {writedataM[7:0]}, {writedataM[7:0]}} : 
+						 (opM == `op_SH) ? {{writedataM[15:0]}, {writedataM[15:0]}} :  
+						 writedataM;
+						
 	// 5.WB
-	// (1) ï¿½ï¿½Ë®ï¿½ß¼Ä´ï¿½ï¿½ï¿½
+	// (1) Á÷Ë®Ïß¼Ä´æÆ÷
 	flopenrc 	#(32) 	r1W(clk, rst, ~stallW, flushW, aluoutM, aluoutW);
 	flopenrc 	#(32) 	r2W(clk, rst, ~stallW, flushW, readdataM, readdataW);
 	flopenrc 	#(5) 	r3W(clk, rst, ~stallW, flushW, writereg_brM, writereg_brW);
 	flopenrc	#(32)	r4W(clk, rst, ~stallW, flushW, srcaM, srcaW);
 	flopenrc	#(64)	r5W(clk, rst, ~stallW, flushW, multdivresultM, multdivresultW);
 	flopenrc	#(32)	r6W(clk, rst, ~stallW, flushW, pcplus8M, pcplus8W);
-	flopenrc 	#(6) 	r7W(clk, rst, ~stallW, flushW, opM, opW);
+	flopenrc	#(6)	r7W(clk, rst, ~stallW, flushW, opM, opW);
 
-	// (2) Ð´ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½
-	lw_sel              lwsel(aluoutW, readdataW,opW, lwresultW);
+	// (2) Ð´¼Ä´æÆ÷Êý¾ÝÑ¡ÔñÆ÷
+	lw_sel				lwsel(aluoutW, readdataW, opW, lwresultW);
 	mux2 		#(32) 	res1mux(aluoutW, lwresultW, memtoregW, result_nolinkW);
 	mux2		#(32)	res2mux(result_nolinkW, pcplus8W, linkdataW, resultW);
 

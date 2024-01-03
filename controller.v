@@ -5,13 +5,21 @@ module controller(
 	// 1.IF
 	// 2.ID
 	input 	wire[5:0] 	opD, functD, rtD,
+<<<<<<< HEAD
 	output 	wire 		pcsrcD, branchD, equalD, jumpD, jumpregD,memenD,
+=======
+	output 	wire 		pcsrcD, branchD, equalD, jumpD, jumpregD,
+>>>>>>> d59e1686e4086877849f2b6e14af9108a6391d0a
 	output	wire		hilotoregD, hiorloD,
 	output	wire		immseD,
 	// 3.EX
 	input 	wire 		stallE, flushE,
 	output 	wire 		memtoregE, alusrcE,
+<<<<<<< HEAD
 	output 	wire 		regdstE, regwriteE,	memenE,
+=======
+	output 	wire 		regdstE, regwriteE,	
+>>>>>>> d59e1686e4086877849f2b6e14af9108a6391d0a
 	output 	wire[5:0] 	alucontrolE,
 	output	wire		hilotoregE, hiorloE,
 	output	wire		ismultE, signedmultE,
@@ -19,7 +27,11 @@ module controller(
 	output	wire		linkregE,
 	// 4.ME
 	input	wire		stallM, flushM,
+<<<<<<< HEAD
 	output 	wire 		memtoregM, regwriteM,memenM,
+=======
+	output 	wire 		memtoregM, memwriteM, regwriteM,
+>>>>>>> d59e1686e4086877849f2b6e14af9108a6391d0a
 	output	wire		hiwriteM, lowriteM,
 	output	wire		ismultM, isdivM,
 	// 5.WB
@@ -33,13 +45,21 @@ module controller(
 	// 1.IF
 	// 2.ID
 	wire[3:0] 			aluopD;
+<<<<<<< HEAD
 	wire 				memtoregD, alusrcD, regdstD, regwriteD;
+=======
+	wire 				memtoregD, memwriteD, alusrcD, regdstD, regwriteD;
+>>>>>>> d59e1686e4086877849f2b6e14af9108a6391d0a
 	wire				hiwriteD, lowriteD;
 	wire[5:0] 			alucontrolD;
 	wire				ismultD, signedmultD;
 	wire				isdivD, signeddivD;
 	wire				linkregD, linkdataD;
 	// 3.EX
+<<<<<<< HEAD
+=======
+	wire 				memwriteE;
+>>>>>>> d59e1686e4086877849f2b6e14af9108a6391d0a
 	wire				hiwriteE, lowriteE;
 	wire				linkdataE;
 	// 4.ME
@@ -50,7 +70,11 @@ module controller(
 	maindec md(
 		opD, functD, rtD,
 		regdstD, alusrcD, memtoregD, branchD, jumpD, jumpregD,
+<<<<<<< HEAD
 		memenD, regwriteD,
+=======
+		memwriteD, regwriteD,
+>>>>>>> d59e1686e4086877849f2b6e14af9108a6391d0a
 		hilotoregD, hiorloD, hiwriteD, lowriteD,
 		immseD, linkregD, linkdataD,
 		ismultD, signedmultD, isdivD, signeddivD,
@@ -64,8 +88,13 @@ module controller(
 	// ID/EX
 	flopenrc #(11) reg1E(
 		clk, rst, ~stallE, flushE,
+<<<<<<< HEAD
 		{memtoregD, memenD, alusrcD, regdstD, regwriteD, alucontrolD},
 		{memtoregE, memenE, alusrcE, regdstE, regwriteE, alucontrolE}
+=======
+		{memtoregD, memwriteD, alusrcD, regdstD, regwriteD, alucontrolD},
+		{memtoregE, memwriteE, alusrcE, regdstE, regwriteE, alucontrolE}
+>>>>>>> d59e1686e4086877849f2b6e14af9108a6391d0a
 	);
 	flopenrc #(4) reg2E(
 		clk, rst, ~stallE, flushE,
@@ -86,8 +115,13 @@ module controller(
 	// EX/ME
 	flopenrc #(3) reg1M(
 		clk, rst, ~stallM, flushM,
+<<<<<<< HEAD
 		{memtoregE, memenE, regwriteE},
 		{memtoregM, memenM, regwriteM}
+=======
+		{memtoregE, memwriteE, regwriteE},
+		{memtoregM, memwriteM, regwriteM}
+>>>>>>> d59e1686e4086877849f2b6e14af9108a6391d0a
 	);
 	flopenrc #(2) reg2M(
 		clk, rst, ~stallM, flushM,
