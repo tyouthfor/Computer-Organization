@@ -43,10 +43,12 @@ module mips_sram(
     wire [4:0]      writeregW;
     wire [31:0]     resultW;
 
+    wire            exceptflush;
+
     wire [39:0]     ascii;
 
     mips mips(
-        .clk(clk),
+        .clk(~clk),
         .rst(rst),
         // IF
         .pc_pF(pc), 
@@ -65,17 +67,19 @@ module mips_sram(
         .pcW(pcW),
         .regwrite(regwriteW),
         .writeregW(writeregW),
-        .resultW(resultW)
+        .resultW(resultW),
+        // except
+        .exceptflush(exceptflush)
     );
 
-    // inst_sram
-    assign inst_sram_en         = 1'b1;
+    // inst sram
+    assign inst_sram_en         = ~exceptflush;
     assign inst_sram_wen        = 4'b0;
     assign inst_sram_addr       = pc;
     assign inst_sram_wdata      = 32'b0;
     assign instr                = inst_sram_rdata;
 
-    // data_sram
+    // data sram
     assign data_sram_wen        = memwrite;
     assign data_sram_addr       = aluout;
     assign data_sram_wdata      = writedata;

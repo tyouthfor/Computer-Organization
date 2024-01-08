@@ -47,6 +47,9 @@ module mips_sramlike(
     wire                    d_stall;
     wire                    div_stall;
 
+    wire                    longest_stall;
+    assign longest_stall = i_stall | d_stall | div_stall;
+
     mips_sram mips_sram(
         .clk(clk),
         .rst(~rst),
@@ -91,7 +94,7 @@ module mips_sramlike(
         .inst_rdata(inst_rdata),
         .inst_addr_ok(inst_addr_ok),
         .inst_data_ok(inst_data_ok),
-        .div_stall(div_stall)
+        .longest_stall(longest_stall)
     );
 
     data_sramlike_interface data_sramlike_interface(
@@ -113,7 +116,7 @@ module mips_sramlike(
         .data_rdata(data_rdata),
         .data_addr_ok(data_addr_ok),
         .data_data_ok(data_data_ok),
-        .div_stall(div_stall)
+        .longest_stall(longest_stall)
     );
 
 endmodule
