@@ -62,7 +62,7 @@ module div(
 
 				// 00: 除法器空闲
 				`DivFree: begin
-					if (start_i && !annul_i) begin
+					if (start_i & ~annul_i) begin
 
 						// 判断除数是否为 0
 						if (opdata2_i == 0) begin
@@ -108,7 +108,7 @@ module div(
 
 				// 10: 除法器工作中
 				`DivOn: begin
-					if (!annul_i) begin
+					if (~annul_i) begin
 
 						// 32 位被除数的除法运算需要 32 个时钟周期
 						if (cnt != 6'b100000) begin
@@ -146,7 +146,7 @@ module div(
 				`DivEnd: begin
 					result_o <= {dividend[64:33], dividend[31:0]};
 					ready_o <= 1;
-					if (!start_i) begin
+					if (~start_i) begin
 						state <= `DivFree;
 						result_o <= 0;
 						ready_o <= 0;

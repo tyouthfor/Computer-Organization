@@ -3,8 +3,8 @@
 
 module aludec(
 	/*
-		模块坝称: aludec
-		模块功能: ALU 译砝器
+		模块名称: aludec
+		模块功能: ALU 译码器
 		输入:
 			funct 			instr[5:0]
 			aluop 			maindec 的输出

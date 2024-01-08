@@ -26,7 +26,7 @@ module exception(
                 pc_except = 32'hBFC00380;
             end 
             else if (instram_except) begin
-                excepttype = 32'h00000004;  // 地址错例外（坖指）
+                excepttype = 32'h00000004;  // 地址错例外（取指）
                 badramaddr = pc;
                 pc_except = 32'hBFC00380;
             end

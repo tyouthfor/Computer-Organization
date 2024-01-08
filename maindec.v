@@ -51,15 +51,15 @@ module maindec(
 
 	assign {regdst, alusrc, branch, jump, immse} = controls;
 
-	assign hilotoreg 		= ((funct == `funct_MFHI | funct == `funct_MFLO) & op == `op_RTYPE);
-	assign hiorlo 			= (funct == `funct_MFLO & op == `op_RTYPE);
+	assign hilotoreg 		= stallD ? 1'b0 : ((funct == `funct_MFHI | funct == `funct_MFLO) & op == `op_RTYPE);
+	assign hiorlo 			= stallD ? 1'b0 : (funct == `funct_MFLO & op == `op_RTYPE);
 	assign hiwrite 			= ((funct == `funct_MTHI | funct == `funct_MULT | funct == `funct_MULTU |
 					   			funct == `funct_DIV | funct == `funct_DIVU) & op == `op_RTYPE);
 	assign lowrite 			= ((funct == `funct_MTLO | funct == `funct_MULT | funct == `funct_MULTU |
 					   			funct == `funct_DIV | funct == `funct_DIVU) & op == `op_RTYPE);
 
-	assign ismult 			= ((funct == `funct_MULT | funct == `funct_MULTU) & op == `op_RTYPE);
-	assign signedmult 		= (funct == `funct_MULT & op == `op_RTYPE);
+	assign ismult 			= stallD ? 1'b0 : ((funct == `funct_MULT | funct == `funct_MULTU) & op == `op_RTYPE);
+	assign signedmult 		= stallD ? 1'b0 : (funct == `funct_MULT & op == `op_RTYPE);
 	assign isdiv 			= stallD ? 1'b0 : ((funct == `funct_DIV | funct == `funct_DIVU) & op == `op_RTYPE);
 	assign signeddiv 		= stallD ? 1'b0 : (funct == `funct_DIV & op == `op_RTYPE);
 
