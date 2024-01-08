@@ -2,13 +2,13 @@
 
 module signext(
 	/*
-		模块名称: signext
-		模块功能: 立即数扩展
+		模块坝称: signext
+		模块功能: 立坳数扩展
 		输入:
-			a 		16 位立即数
-			op 		0-无符号扩展, 1-符号扩展
+			a 		16 佝立坳数
+			op 		0-无符坷扩展, 1-符坷扩展
 		输出:
-			y 		32 位输出
+			y 		32 佝输出
 	*/
 	input 	wire[15:0] 	a,
 	input	wire		op,
