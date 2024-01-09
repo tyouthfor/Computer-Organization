@@ -19,12 +19,52 @@ module inst_sramlike_interface (
     input   wire            inst_addr_ok,
     input   wire            inst_data_ok,
 
-    input   wire            div_stall
+    input   wire            div_stall,
+    input   wire            exceptflush
     );
 
     reg                     addr_rcv;
     reg                     data_rcv;
     reg [31:0]              inst_rdata_save;
+
+    reg                     except;
+    reg [1:0]               state;
+
+    always @(posedge clk) begin
+        if (rst) begin
+            except <= 1'b0;
+            state <= 2'b00;
+        end
+        else begin
+            case (state)
+                2'b00: begin
+                    if (exceptflush) begin
+                        except <= 1'b1;
+                        state <= 2'b01;
+                    end
+                end
+
+                2'b01: begin  // 收到第一个 inst_data_ok, 为异常指令下一条指令, 继续 i_stall
+                    if (inst_data_ok) begin
+                        except <= 1'b1;
+                        state <= 2'b10;
+                    end
+                end
+
+                2'b10: begin  // 收到第二个 inst_data_ok, 为 BFC00380, 不再 i_stall
+                    if (inst_data_ok) begin
+                        except <= 1'b0;
+                        state <= 2'b00;
+                    end
+                end
+
+                default: begin
+                    except <= 1'b0;
+                    state <= 2'b00;
+                end
+            endcase
+        end
+    end
 
     // 在处理完整个事务后才将 addr_rcv 和 data_rcv 拉低
     always @(posedge clk) begin
@@ -47,7 +87,10 @@ module inst_sramlike_interface (
         else if (inst_data_ok) begin
             data_rcv <= 1'b1;  // 数据握手成功
         end
-        else if (~i_stall | ~div_stall) begin
+        else if (~i_stall & ~div_stall) begin
+            data_rcv <= 1'b0;
+        end
+        else if (except) begin
             data_rcv <= 1'b0;
         end
     end
@@ -70,6 +113,6 @@ module inst_sramlike_interface (
 
     //sram
     assign inst_sram_rdata  = inst_rdata_save;
-    assign i_stall          = inst_sram_en & ~data_rcv;  // 当数据握手成功时不再 stall
+    assign i_stall          = (inst_sram_en & ~data_rcv) | except;
 
 endmodule

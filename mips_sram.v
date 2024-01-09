@@ -26,8 +26,10 @@ module mips_sram(
     output  wire[3:0]       debug_wb_rf_wen,
     output  wire[4:0]       debug_wb_rf_wnum,
     output  wire[31:0]      debug_wb_rf_wdata,
-
-    output  wire            div_stall
+    // stall
+    output  wire            div_stall,
+    // except
+    output  wire            exceptflush
     );
 
 	wire [31:0]     pc;             // ¶Á inst_sram µÄµØÖ·
@@ -65,7 +67,9 @@ module mips_sram(
         .pcW(pcW),
         .regwrite(regwriteW),
         .writeregW(writeregW),
-        .resultW(resultW)
+        .resultW(resultW),
+        // except
+        .exceptflush(exceptflush)
     );
 
     // inst_sram

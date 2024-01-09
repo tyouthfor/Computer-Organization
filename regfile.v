@@ -1,21 +1,7 @@
 `timescale 1ns / 1ps
 
 module regfile(
-	/*
-		模块坝称: regfile
-		模块功能: 寄存器堆
-		输入:
-			clk 	时钟信坷
-			we3 	写信坷
-			ra1 	读寄存器坷-1
-			ra2	 	读寄存器坷-2
-			wa3 	写寄存器坷
-			wd3		写入数杮
-		输出:
-			rd1 	读出数杮-1
-			rd2 	读出数杮-2
-	*/
-	input 	wire 		clk,
+	input 	wire 		clk, rst,
 	input 	wire 		we3,
 	input 	wire[4:0] 	ra1, ra2, wa3,
 	input 	wire[31:0] 	wd3,

@@ -18,7 +18,9 @@ module mips(
 	output	wire[31:0]		pcW,
 	output					regwrite,
 	output	wire[4:0]		writeregW,
-	output	wire[31:0]		resultW
+	output	wire[31:0]		resultW,
+	// except
+	output	wire			exceptflush
     );
 	
 	wire[31:0]				instrD;
@@ -129,7 +131,9 @@ module mips(
 		linkdataW,
 		cp0toregW,
 		pcW, writeregW, resultW,
-		stallW, flushW
+		stallW, flushW,
+		// except
+		exceptflush
 	);
 	
 endmodule

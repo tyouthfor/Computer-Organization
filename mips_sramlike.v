@@ -46,6 +46,7 @@ module mips_sramlike(
     wire[31:0]              data_sram_rdata;
     wire                    d_stall;
     wire                    div_stall;
+    wire                    exceptflush;
 
     mips_sram mips_sram(
         .clk(clk),
@@ -69,7 +70,10 @@ module mips_sramlike(
         .debug_wb_rf_wen(debug_wb_rf_wen),
         .debug_wb_rf_wnum(debug_wb_rf_wnum),
         .debug_wb_rf_wdata(debug_wb_rf_wdata),
-        .div_stall(div_stall)
+        // stall
+        .div_stall(div_stall),
+        // except
+        .exceptflush(exceptflush)
     );
 
     inst_sramlike_interface inst_sramlike_interface(
@@ -91,7 +95,10 @@ module mips_sramlike(
         .inst_rdata(inst_rdata),
         .inst_addr_ok(inst_addr_ok),
         .inst_data_ok(inst_data_ok),
-        .div_stall(div_stall)
+        // stall
+        .div_stall(div_stall),
+        // except
+        .exceptflush(exceptflush)
     );
 
     data_sramlike_interface data_sramlike_interface(

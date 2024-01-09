@@ -46,7 +46,7 @@ module data_sramlike_interface(
         else if (data_data_ok) begin
             data_rcv <= 1'b1;  // 数据握手成功
         end
-        else if (~d_stall | ~div_stall) begin
+        else if (~d_stall & ~div_stall) begin
             data_rcv <= 1'b0;
         end
     end

@@ -53,9 +53,9 @@ module maindec(
 
 	assign hilotoreg 		= stallD ? 1'b0 : ((funct == `funct_MFHI | funct == `funct_MFLO) & op == `op_RTYPE);
 	assign hiorlo 			= stallD ? 1'b0 : (funct == `funct_MFLO & op == `op_RTYPE);
-	assign hiwrite 			= ((funct == `funct_MTHI | funct == `funct_MULT | funct == `funct_MULTU |
+	assign hiwrite 			= stallD ? 1'b0 : ((funct == `funct_MTHI | funct == `funct_MULT | funct == `funct_MULTU |
 					   			funct == `funct_DIV | funct == `funct_DIVU) & op == `op_RTYPE);
-	assign lowrite 			= ((funct == `funct_MTLO | funct == `funct_MULT | funct == `funct_MULTU |
+	assign lowrite 			= stallD ? 1'b0 : ((funct == `funct_MTLO | funct == `funct_MULT | funct == `funct_MULTU |
 					   			funct == `funct_DIV | funct == `funct_DIVU) & op == `op_RTYPE);
 
 	assign ismult 			= stallD ? 1'b0 : ((funct == `funct_MULT | funct == `funct_MULTU) & op == `op_RTYPE);
@@ -74,8 +74,8 @@ module maindec(
 							   (op == `op_BGEZAL & rt == 5'b10001) | (op == `op_BLTZAL & rt == 5'b10000) | op == `op_JAL |
 							    op == `op_LB | op == `op_LBU | op == `op_LH | op == `op_LHU | op == `op_LW);
 
-	assign cp0toreg			= (op == `op_MFC0 & rs == 5'b00000);
-	assign cp0write			= (op == `op_MTC0 & rs == 5'b00100);
+	assign cp0toreg			= stallD ? 1'b0 : (op == `op_MFC0 & rs == 5'b00000);
+	assign cp0write			= stallD ? 1'b0 : (op == `op_MTC0 & rs == 5'b00100);
 
 	assign is_overflow_detect = ((op == `op_RTYPE & (funct == `funct_ADD | funct == `funct_SUB)) | op == `op_ADDI);
 

@@ -45,7 +45,9 @@ module datapath(
 	output	wire[31:0]	pcW,
 	output	wire[4:0]	writeregWE,
 	output	wire[31:0]	result,
-	output	wire		stallW, flushW
+	output	wire		stallW, flushW,
+	// except
+	output	wire		exceptflush
     );
 	
 	// IF
@@ -156,7 +158,9 @@ module datapath(
 		hiwriteW, lowriteW,
 		ismultW, isdivW,
 		cp0toregW,
-		stallW, flushW
+		stallW, flushW,
+		// except
+		exceptflush
 	);
 
 	assign opD = instrD[31:26];
@@ -203,13 +207,13 @@ module datapath(
 	// (2) 寄存器堆
 	mux2		#(5)	hiloregmux(writereg2W, writereg2E, hilotoregE, writeregWE);  // 写寄存器号
 	mux2		#(32)	hilodatamux(resultW, hiloresultbE, hilotoregE, resultWE);    // 写寄存器数据
-	regfile 			rf(clk, regwriteW | hilotoregE | cp0toregW, rsD, rtD, writeregWE, resultWE, srcaD, srcbD);
+	regfile 			rf(clk, rst, regwriteW | hilotoregE | cp0toregW, rsD, rtD, writeregWE, resultWE, srcaD, srcbD);
 
 	// (3) HILO 寄存器
 	mux2		#(32)	himux(src_mthiloW, multdivresultW[63:32], ismultW | isdivW, hiwritedataW);
 	mux2		#(32)	lomux(src_mthiloW, multdivresultW[31:0], ismultW | isdivW, lowritedataW);
-	HILO				hi(clk, hiwriteW, hiwritedataW, hiresultD);
-	HILO 				lo(clk, lowriteW, lowritedataW, loresultD);
+	HILO				hi(clk, rst, hiwriteW, hiwritedataW, hiresultD);
+	HILO 				lo(clk, rst, lowriteW, lowritedataW, loresultD);
 	mux2		#(32)	hiorlomux(hiresultD, loresultD, hiorloD, hiloresultaD);
 
 	// (4) 立即数扩展

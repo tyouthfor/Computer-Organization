@@ -40,11 +40,12 @@ module hazard(
 	input	wire		hiwriteW, lowriteW,
 	input	wire		ismultW, isdivW,
 	input	wire		cp0toregW,
-	output	wire		stallW, flushW
+	output	wire		stallW, flushW,
+	// except
+	output	wire		exceptflush
     );
 
 	wire 				lwstallD, branchjrstallD, mfhistallD;
-	wire				exceptflush;
 	
 	// 1. ALU 的 RAW 数据冒险
 		// (1) ADD, ADD/LW -- aluoutM (ME --> EX)
