@@ -233,17 +233,18 @@ module hazard(
 			forward_mfhiloE = 3'b100;  // multdivresultW 低 32 位
 		end
 		else if ((hiwriteM & hilotoregE & hiorloE == 1'b0) | (lowriteM & hilotoregE & hiorloE == 1'b1)) begin
-			forward_mfhiloE = 3'b101;  // srcaM
+			forward_mfhiloE = 3'b101;  // src_mthiloM
 		end
 		else if ((hiwriteW & hilotoregE & hiorloE == 1'b0) | (lowriteW & hilotoregE & hiorloE == 1'b1)) begin
-			forward_mfhiloE = 3'b110;  // srcaW
+			forward_mfhiloE = 3'b110;  // src_mthiloW
 		end
 		else begin
 			forward_mfhiloE = 3'b000;  // hiloresultaE
 		end
 	end
 
-	assign mfhistallD = hilotoregD & (regwriteM | regwriteE) & (~isdivE);
+	// assign mfhistallD = hilotoregD & (regwriteM | regwriteE) & (~isdivE);
+	assign mfhistallD = 1'b0;
 
 	// 5. MTHI 的数据冒险
 		// (1) ADD, MTHI -- aluoutM (ME --> EX)
@@ -300,10 +301,10 @@ module hazard(
 	assign exceptflush = (excepttypeM != 0) ? 1'b1 : 1'b0;
 	
 	// stall: 流水线暂停, 寄存器中的值保持不变
-	assign stallF = stallD;
-	assign stallD = stallE | lwstallD | branchjrstallD | mfhistallD | i_stallF;
-	assign stallE = stallM | divstallE;
-	assign stallM = stallW;
+	assign stallF = i_stallF | lwstallD | branchjrstallD | mfhistallD | divstallE | d_stallM;
+	assign stallD = i_stallF | lwstallD | branchjrstallD | mfhistallD | divstallE | d_stallM;
+	assign stallE = divstallE | d_stallM;
+	assign stallM = d_stallM;
 	assign stallW = d_stallM;
 
 	// flush: 流水线刷新, 寄存器中的值清零

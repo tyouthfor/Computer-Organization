@@ -60,6 +60,16 @@ module mycpu_top(
     wire[31:0]      inst_rdata;
     wire            inst_addr_ok;
     wire            inst_data_ok;
+
+    wire            cache_inst_req;
+    wire            cache_inst_wr;
+    wire[1:0]       cache_inst_size;
+    wire[31:0]      cache_inst_addr;
+    wire[31:0]      cache_inst_wdata;
+    wire[31:0]      cache_inst_rdata;
+    wire            cache_inst_addr_ok;
+    wire            cache_inst_data_ok;
+
     wire            data_req;
     wire            data_wr;
     wire[1:0]       data_size;
@@ -69,9 +79,21 @@ module mycpu_top(
     wire            data_addr_ok;
     wire            data_data_ok;
 
+    wire            cache_data_req;
+    wire            cache_data_wr;
+    wire[1:0]       cache_data_size;
+    wire[31:0]      cache_data_addr;
+    wire[31:0]      cache_data_wdata;
+    wire[31:0]      cache_data_rdata;
+    wire            cache_data_addr_ok;
+    wire            cache_data_data_ok;
+
+    wire            dataram_except;
+
     mips_sramlike mips_sramlike(
         .clk(aclk),
         .rst(aresetn),
+        .ext_int(ext_int),
         // inst sram-like
         .inst_req(inst_req),
         .inst_wr(inst_wr),
@@ -94,30 +116,89 @@ module mycpu_top(
         .debug_wb_pc(debug_wb_pc),
         .debug_wb_rf_wen(debug_wb_rf_wen),
         .debug_wb_rf_wnum(debug_wb_rf_wnum),
-        .debug_wb_rf_wdata(debug_wb_rf_wdata)
+        .debug_wb_rf_wdata(debug_wb_rf_wdata),
+        // except
+        .dataram_except(dataram_except)
     );
 
-    cpu_axi_interface axi_interface(
+    wire[31:0] inst_paddr, data_paddr;
+    wire no_dcache;
+
+    mmu mmu(
+		.inst_vaddr(inst_addr),
+		.inst_paddr(inst_paddr),
+		.data_vaddr(data_addr),
+		.data_paddr(data_paddr),
+		.no_dcache(no_dcache)
+	);
+
+    i_cache_direct_map i_cache(
+        .clk(aclk),
+        .rst(~aresetn),
+        .cpu_inst_req(inst_req),
+        .cpu_inst_wr(inst_wr),
+        .cpu_inst_size(inst_size),
+        .cpu_inst_addr(inst_paddr),
+        .cpu_inst_wdata(inst_wdata),
+        .cpu_inst_rdata(inst_rdata),
+        .cpu_inst_addr_ok(inst_addr_ok),
+        .cpu_inst_data_ok(inst_data_ok),
+        // i cache
+        .cache_inst_req(cache_inst_req),
+        .cache_inst_wr(cache_inst_wr),
+        .cache_inst_size(cache_inst_size),
+        .cache_inst_addr(cache_inst_addr),
+        .cache_inst_wdata(cache_inst_wdata),
+        .cache_inst_rdata(cache_inst_rdata),
+        .cache_inst_addr_ok(cache_inst_addr_ok),
+        .cache_inst_data_ok(cache_inst_data_ok)
+    );
+
+    d_cache_write_through d_cache(
+        .clk(aclk),
+        .rst(~aresetn),
+        .cpu_data_req(data_req),
+        .cpu_data_wr(data_wr),
+        .cpu_data_size(data_size),
+        .cpu_data_addr(data_paddr),
+        .cpu_data_wdata(data_wdata),
+        .cpu_data_rdata(data_rdata),
+        .cpu_data_addr_ok(data_addr_ok),
+        .cpu_data_data_ok(data_data_ok),
+        // i cache
+        .cache_data_req(cache_data_req),
+        .cache_data_wr(cache_data_wr),
+        .cache_data_size(cache_data_size),
+        .cache_data_addr(cache_data_addr),
+        .cache_data_wdata(cache_data_wdata),
+        .cache_data_rdata(cache_data_rdata),
+        .cache_data_addr_ok(cache_data_addr_ok),
+        .cache_data_data_ok(cache_data_data_ok),
+        // exceot
+        .dataram_except(dataram_except),
+        .no_dcache(no_dcache)
+    );
+        cpu_axi_interface axi_interface(
         .clk(aclk),
         .resetn(aresetn),
         // inst sram-like
-        .inst_req(inst_req),
-        .inst_wr(inst_wr),
-        .inst_size(inst_size),
-        .inst_addr(inst_addr),
-        .inst_wdata(inst_wdata),
-        .inst_rdata(inst_rdata),
-        .inst_addr_ok(inst_addr_ok),
-        .inst_data_ok(inst_data_ok),
+        .inst_req(cache_inst_req),
+        .inst_wr(cache_inst_wr),
+        .inst_size(cache_inst_size),
+        .inst_addr(cache_inst_addr),
+        .inst_wdata(cache_inst_wdata),
+        .inst_rdata(cache_inst_rdata),
+        .inst_addr_ok(cache_inst_addr_ok),
+        .inst_data_ok(cache_inst_data_ok),
         // data sram-like
-        .data_req(data_req),
-        .data_wr(data_wr),
-        .data_size(data_size),
-        .data_addr(data_addr),
-        .data_wdata(data_wdata),
-        .data_rdata(data_rdata),
-        .data_addr_ok(data_addr_ok),
-        .data_data_ok(data_data_ok),
+        .data_req(cache_data_req),
+        .data_wr(cache_data_wr),
+        .data_size(cache_data_size),
+        .data_addr(cache_data_addr),
+        .data_wdata(cache_data_wdata),
+        .data_rdata(cache_data_rdata),
+        .data_addr_ok(cache_data_addr_ok),
+        .data_data_ok(cache_data_data_ok),
         // AXI
         // (1) ar
         .arid(arid),

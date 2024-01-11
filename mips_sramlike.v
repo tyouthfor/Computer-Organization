@@ -7,6 +7,7 @@ module mips_sramlike(
     */
     input   wire            clk,
     input   wire            rst,
+    input	wire[5:0]		ext_int,
     // inst sram-like
     output  wire            inst_req,
     output  wire            inst_wr,
@@ -29,7 +30,9 @@ module mips_sramlike(
     output  wire[31:0]      debug_wb_pc,
     output  wire[3:0]       debug_wb_rf_wen,
     output  wire[4:0]       debug_wb_rf_wnum,
-    output  wire[31:0]      debug_wb_rf_wdata
+    output  wire[31:0]      debug_wb_rf_wdata,
+    // except
+    output  wire            dataram_except
     );
 
     // sram
@@ -46,11 +49,11 @@ module mips_sramlike(
     wire[31:0]              data_sram_rdata;
     wire                    d_stall;
     wire                    div_stall;
-    wire                    exceptflush;
 
     mips_sram mips_sram(
         .clk(clk),
         .rst(~rst),
+        .ext_int(ext_int),
         // inst sram
         .inst_sram_en(inst_sram_en),
         .inst_sram_wen(inst_sram_wen),
@@ -73,7 +76,8 @@ module mips_sramlike(
         // stall
         .div_stall(div_stall),
         // except
-        .exceptflush(exceptflush)
+        .exceptflush(exceptflush),
+        .dataram_except(dataram_except)
     );
 
     inst_sramlike_interface inst_sramlike_interface(

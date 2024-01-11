@@ -3,16 +3,16 @@
 
 module datapath(
 	input 	wire 		clk, rst,
+	input	wire[5:0]	ext_int,
 	// IF
 	output 	wire[31:0] 	pcF,
 	input 	wire[31:0] 	instrF,
 	input	wire		i_stallF,
 	// ID
-	input 	wire 		pcsrcD, branchD, jumpD, jumpregD,
+	input 	wire 		branchD, jumpD, jumpregD,
 	input	wire		hilotoregD, hiorloD,
 	input	wire		immseD,
 	input	wire		invalidD,
-	output 	wire 		equalD,
 	output	wire[31:0]	instrD,
 	output	wire		stallD,
 	// EX
@@ -43,11 +43,12 @@ module datapath(
 	input	wire		linkdataW,
 	input	wire		cp0toregW,
 	output	wire[31:0]	pcW,
-	output	wire[4:0]	writeregWE,
+	output	wire[4:0]	writereg,
 	output	wire[31:0]	result,
 	output	wire		stallW, flushW,
 	// except
-	output	wire		exceptflush
+	output	wire		exceptflush,
+	output	wire		dataram_except
     );
 	
 	// IF
@@ -64,13 +65,12 @@ module datapath(
 	wire[31:0]			hiresultD, loresultD, hiloresultaD;
 	wire[2:0] 			forward_branchjraD, forward_branchjrbD;
 	wire[31:0]			pcD;
+	wire				equalD;
 	wire				instram_exceptD, break_exceptD, syscall_exceptD, eretD;
 	wire				is_in_delayslotD;
-	// wire				stallD;
 	wire 				flushD;
 	// EX
 	wire[2:0] 			forwardaE, forwardbE;
-	wire[5:0]			opE;
 	wire[4:0] 			rsE, rtE, rdE, shamtE;
 	wire[5:0]			opE;
 	wire[4:0] 			writeregE, writereg2E;
@@ -105,7 +105,7 @@ module datapath(
 	wire[31:0] 			excepttypeM, badramaddrM, pc_exceptM;
 	wire				forwardcp0M;
 	// WB
-	wire[4:0] 			writereg2W;
+	wire[4:0] 			writereg2W, writeregWE;
 	wire[5:0]			opW;
 	wire[31:0] 			aluoutW, readdataW, resultaW, resultbW, resultW;
 	wire[63:0]			multdivresultW;
@@ -115,9 +115,6 @@ module datapath(
 	wire[31:0]			lwresultW;
 	wire[31:0]			hiloresultbW, resultWE;
 	wire[31:0]			cp0data2W, writedataW;
-
-	// wire d_stall2M;
-	// assign d_stall2M = d_stallM & (memtoregM | memwriteM != 0);
 
 	hazard h(
 		// IF
@@ -185,6 +182,8 @@ module datapath(
 	// (6) 保留指令例外: invalidD
 	// (7) ALU 溢出例外: overflowE
 
+	assign dataram_except = dataramload_exceptM | dataramstore_exceptM;
+
 	// 1.IF
 	// (1) PC 与 PC 自增
 	pc 			 		pcreg(clk, rst, ~stallF, flushF, pcnextFD, pc_exceptM, pcF);
@@ -198,9 +197,9 @@ module datapath(
 	// (1) 流水线寄存器
 	flopenrc 	#(32) 	r1D(clk, rst, ~stallD, flushD, pcplus4F, pcplus4D);
 	flopenrc 	#(32) 	r2D(clk, rst, ~stallD, flushD, instrF, instrD);
-	flopenrc 	#(32) 	r4D(clk, rst, ~stallD, flushD, pcplus8F, pcplus8D);
-	flopenrc	#(32)	r5D(clk, rst, ~stallD, flushD, pcF, pcD);
-	flopenrc	#(2)	r6D(clk, rst, ~stallD, flushD, 
+	flopenrc 	#(32) 	r3D(clk, rst, ~stallD, flushD, pcplus8F, pcplus8D);
+	flopenrc	#(32)	r4D(clk, rst, ~stallD, flushD, pcF, pcD);
+	flopenrc	#(2)	r5D(clk, rst, ~stallD, flushD, 
 							{instram_exceptF, is_in_delayslotF}, 
 							{instram_exceptD, is_in_delayslotD});
 
@@ -222,7 +221,7 @@ module datapath(
 	// (5) PC next
 	sl2 				immsh(signimmD, signimmshD);
 	adder 				pcadd3(pcplus4D, signimmshD, pcbranchD);
-	mux2 		#(32) 	pcbrmux(pcplus4F, pcbranchD, pcsrcD, pcnextbrFD);
+	mux2 		#(32) 	pcbrmux(pcplus4F, pcbranchD, branchD & equalD, pcnextbrFD);
 	mux2 		#(32) 	pcjdmux(pcnextbrFD, {pcplus4D[31:28], instrD[25:0], 2'b00}, jumpD, pcnextjdFD);
 	mux2		#(32)	pcjrmux(pcnextjdFD, srca2D, jumpregD, pcnextFD);
 
@@ -304,7 +303,7 @@ module datapath(
 							   pcM, aluoutM,
 							   excepttypeM, badramaddrM, pc_exceptM);
 
-	cp0_reg 			cp0reg(clk, rst, cp0writeM, rdM, rdE, writedataM, 6'b000000, excepttypeM, pcM, is_in_delayslotM, badramaddrM,
+	cp0_reg 			cp0reg(clk, rst, cp0writeM, rdM, rdE, writedataM, ext_int, excepttypeM, pcM, is_in_delayslotM, badramaddrM,
 							   cp0dataE, cp0countM, cp0compareM, cp0statusM, cp0causeM, cp0epcM, cp0configM, cp0pridM, cp0badvaddrM, timer_interruptM);
 	
 	mux2		#(32)	forwardcp0mux(cp0dataM, writedataW, forwardcp0M, cp0data2M);
@@ -329,7 +328,8 @@ module datapath(
 	mux2		#(32)	res2mux(resultaW, pcplus8W, linkdataW, resultbW);
 	mux2		#(32)	res3mux(resultbW, cp0data2W, cp0toregW, resultW);
 
-	// (3) debug 写寄存器堆数据
+	// (3) debug
 	assign result = hilotoregW ? hiloresultbW : resultWE;
+	assign writereg = hilotoregW ? writereg2W : writeregWE;
 
 endmodule

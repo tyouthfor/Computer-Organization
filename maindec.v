@@ -26,23 +26,23 @@ module maindec(
 			invalid		1-指令无效, 0-指令有效
 			aluop 		传给 aludec 的信号
 	*/
-	input	wire[31:0]	instr,
-	input	wire		stallD,
-	output	wire		regdst, alusrc, memtoreg, branch, jump, jumpreg,
-	output	wire		regwrite,
-	output	wire		hilotoreg, hiorlo, hiwrite, lowrite,
-	output	wire		immse, linkreg, linkdata,
-	output	wire		ismult, signedmult, isdiv, signeddiv,
-	output	reg			invalid,
-	output	wire		cp0toreg, cp0write,
-	output	wire		is_overflow_detect,
-	output	wire		memwe,
-	output 	reg [3:0] 	aluop
+	input	wire[31:0]		instr,
+	input	wire			stallD,
+	output	wire			regdst, alusrc, memtoreg, branch, jump, jumpreg,
+	output	wire			regwrite,
+	output	wire			hilotoreg, hiorlo, hiwrite, lowrite,
+	output	wire			immse, linkreg, linkdata,
+	output	wire			ismult, signedmult, isdiv, signeddiv,
+	output	reg				invalid,
+	output	wire			cp0toreg, cp0write,
+	output	wire			is_overflow_detect,
+	output	wire			memwe,
+	output 	reg [3:0] 		aluop
     );
 
-	wire[5:0] 			op, funct;
-	wire[4:0] 			rs, rt;
-	reg [4:0] 			controls;
+	wire[5:0] 				op, funct;
+	wire[4:0] 				rs, rt;
+	reg [4:0] 				controls;
 
 	assign op = instr[31:26];
 	assign rs = instr[25:21];
@@ -123,8 +123,6 @@ module maindec(
 
 			// CP0
 			`op_ERET:	begin controls = 0; aluop = 0; end
-			`op_MFC0:	begin controls = 0; aluop = 0; end
-			`op_MTC0:	begin controls = 0; aluop = 0; end
 
 			default: 	begin controls = 0; aluop = 0; invalid = 1; end
 		endcase

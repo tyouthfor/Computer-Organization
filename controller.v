@@ -6,8 +6,7 @@ module controller(
 	// 2.ID
 	input 	wire[31:0]	instrD,
 	input	wire		stallD,
-	input	wire		equalD, 
-	output 	wire 		pcsrcD, branchD, jumpD, jumpregD,
+	output 	wire 		branchD, jumpD, jumpregD,
 	output	wire		hilotoregD, hiorloD,
 	output	wire		immseD,
 	output	wire		invalidD,
@@ -64,7 +63,8 @@ module controller(
 	maindec md(
 		instrD,
 		stallD,
-		regdstD, alusrcD, memtoregD, branchD, jumpD, jumpregD, regwriteD,
+		regdstD, alusrcD, memtoregD, branchD, jumpD, jumpregD,
+		regwriteD,
 		hilotoregD, hiorloD, hiwriteD, lowriteD,
 		immseD, linkregD, linkdataD,
 		ismultD, signedmultD, isdivD, signeddivD,
@@ -76,7 +76,7 @@ module controller(
 	aludec ad(functD, aluopD, alucontrolD);
 
 	assign functD = instrD[5:0];
-	assign pcsrcD = branchD & equalD;
+	// assign pcsrcD = branchD & equalD;
 
 	// 流水线寄存器
 	// ID/EX

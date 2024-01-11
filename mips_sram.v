@@ -7,6 +7,7 @@ module mips_sram(
     */
     input   wire            clk,
     input   wire            rst,
+    input	wire[5:0]		ext_int,
     // inst sram
     output  wire            inst_sram_en,
     output  wire[3:0]       inst_sram_wen,
@@ -29,7 +30,8 @@ module mips_sram(
     // stall
     output  wire            div_stall,
     // except
-    output  wire            exceptflush
+    output  wire            exceptflush,
+    output  wire            dataram_except
     );
 
 	wire [31:0]     pc;             // ¶Á inst_sram µÄµØÖ·
@@ -50,13 +52,14 @@ module mips_sram(
     mips mips(
         .clk(clk),
         .rst(rst),
+        .ext_int(ext_int),
         // IF
-        .pc_pF(pc), 
+        .pcF(pc), 
         .instrF(instr), 
         // ME
         .data_sram_enM(data_sram_en),
         .memwriteM(memwrite),
-        .aluout_pM(aluout),
+        .aluoutM(aluout),
         .writedataM(writedata),
         .readdataM(readdata),
         // stall
@@ -69,7 +72,8 @@ module mips_sram(
         .writeregW(writeregW),
         .resultW(resultW),
         // except
-        .exceptflush(exceptflush)
+        .exceptflush(exceptflush),
+        .dataram_except(dataram_except)
     );
 
     // inst_sram
