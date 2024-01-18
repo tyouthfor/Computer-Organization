@@ -1,6 +1,16 @@
 `timescale 1ns / 1ps
 `include "defines.vh"
 
+/*
+    模块名称: sw_sel
+    模块功能: 根据 Store 指令类型何地址产生正确的 data ram 写使能信号
+    输入:
+        aluoutM             Store 指令写 data ram 的地址
+        opM                 Store 指令的 opcode
+        excepttypeM         例外类型
+    输出:
+        memwriteM           data ram 的写使能信号
+*/
 module sw_sel(
     input   wire[31:0]      aluoutM,
     input   wire[5:0]       opM,
@@ -9,7 +19,6 @@ module sw_sel(
     );
 
     always @(*) begin
-        memwriteM = 4'b0000;
         if (excepttypeM != 0) begin
             memwriteM = 4'b0000;
         end

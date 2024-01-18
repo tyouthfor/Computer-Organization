@@ -1,34 +1,36 @@
 `timescale 1ns / 1ps
 `include "defines.vh"
 
+/*
+	模块名称: cp0_reg
+	模块功能: CP0 协寄存器, 负责进行例外处理
+	输入:
+		clk                     时钟信号
+		rst                     复位信号
+		we_i                    CP0 的写信号
+		waddr_i                 写 CP0 地址
+		raddr_i                 读 CP0 地址
+		data_i                  写 CP0 数据
+		int_i                   待处理硬件中断标识
+		excepttype_i            触发例外的类型
+		current_inst_addr_i     触发例外的指令地址
+		is_in_delayslot_i       触发例外的指令是否为延迟槽指令
+		bad_addr_i              触发地址错例外时的错误 ram 地址
+	输出:
+		data_o                  从 CP0 读出的数据
+		count_o                 每两个时钟周期加一, 当和 compare 寄存器的值相等时触发时钟中断
+		compare_o               
+		status_o                发生例外时 status_o[1] 置 1, 此时 CPU 处于核心态
+		cause_o                 存储例外的类型
+		epc_o                   存储发生例外的指令地址, 用于例外处理完毕后的返回, 即处理完毕后的 PC
+									(1) 如果触发例外的指令是延迟槽指令, 则 EPC = current_inst_addr_i - 4
+									(2) 如果触发例外的指令不是延迟槽指令, 则 EPC = current_inst_addr_i
+		config_o                暂时无用
+		prid_o                  暂时无用
+		badvaddr                存储触发地址错例外时的错误 ram 地址
+		timer_int_o             0-未触发时钟中断, 1-触发时钟中断
+*/
 module cp0_reg(
-    /*
-        输入:
-            clk                     时钟信号
-            rst                     复位信号
-            we_i                    写 CP0 信号
-            waddr_i                 写 CP0 地址
-            raddr_i                 读 CP0 地址
-            data_i                  写 CP0 数据
-            int_i                   待处理硬件中断标识 = 6'b000000
-            excepttype_i            例外类型
-            current_inst_addr_i     引发例外的指令地址
-            is_in_delayslot_i       指令是否为延迟槽指令
-            bad_addr_i              触发地址错例外时的错误 ram 地址
-        输出:
-            data_o                  从 CP0 读出的数据
-            count_o                 每两个时钟周期加一. 当和 COMPARE 寄存器的值相等时, 触发时钟中断
-            compare_o               
-            status_o                发生例外时 status_o[1] 置 1, 此时 CPU 处于核心态, 所有硬件和软件中断被屏蔽
-            cause_o                 存储例外的类型
-            epc_o                   存储发生例外的指令地址, 用于例外处理完毕后的返回, 即处理完毕后的 PC
-										(1) 如果触发例外的指令是延迟槽指令, 则 EPC = current_inst_addr_i - 4
-										(2) 如果触发例外的指令不是延迟槽指令, 则 EPC = current_inst_addr_i
-            config_o                暂时无用
-            prid_o                  暂时无用
-            badvaddr                存储触发地址错例外时的错误 ram 地址
-            timer_int_o             1-触发时钟中断, 0-未触发时钟中断
-    */
 	input   wire        clk, rst,
 	input   wire        we_i,
 	input   wire[4:0]   waddr_i,
@@ -70,8 +72,8 @@ module cp0_reg(
 			count <= count + 1;
 			cause_o[15:10] <= int_i;  // 待处理硬件中断标识
 
-            // 触发时钟中断
-			if (compare_o != 0 && count_o == compare_o) begin
+            // 检测时钟中断
+			if (compare_o != 0 & count_o == compare_o) begin
 				timer_int_o <= 1'b1;
 			end
 
@@ -100,9 +102,9 @@ module cp0_reg(
 				endcase
 			end
 
-            // 更新异常
+            // 检测例外
 			case (excepttype_i)
-				32'h00000001: begin  // 中断（其实写入的cause为0）
+				32'h00000001: begin  // 外中断
 					if (is_in_delayslot_i) begin
 						epc_o <= current_inst_addr_i - 4;
 						cause_o[31] <= 1'b1;
@@ -114,11 +116,12 @@ module cp0_reg(
 					status_o[1] <= 1'b1;
 					cause_o[6:2] <= 5'b00000;
 				end
-				32'h00000004: begin  // 地址错例外（取指非对齐或 Load 非对齐）
+				32'h00000004: begin  // 地址错例外（取指未对齐或 Load 未对齐）
 					if (is_in_delayslot_i) begin
 						epc_o <= current_inst_addr_i - 4;
 						cause_o[31] <= 1'b1;
-					end else begin 
+					end 
+					else begin 
 						epc_o <= current_inst_addr_i;
 						cause_o[31] <= 1'b0;
 					end
@@ -126,7 +129,7 @@ module cp0_reg(
 					cause_o[6:2] <= 5'b00100;
 					badvaddr <= bad_addr_i;
 				end
-				32'h00000005: begin  // 地址错例外（Store 非对齐）
+				32'h00000005: begin  // 地址错例外（Store 未对齐）
 					if (is_in_delayslot_i) begin
 						epc_o <= current_inst_addr_i - 4;
 						cause_o[31] <= 1'b1;
@@ -187,7 +190,7 @@ module cp0_reg(
 					status_o[1] <= 1'b1;
 					cause_o[6:2] <= 5'b01100;
 				end
-				32'h0000000d: begin  // 自陷指令例外（不在57条中）
+				32'h0000000d: begin  // 自陷指令例外
 					if (is_in_delayslot_i) begin
 						epc_o <= current_inst_addr_i - 4;
 						cause_o[31] <= 1'b1;
@@ -199,7 +202,7 @@ module cp0_reg(
 					status_o[1] <= 1'b1;
 					cause_o[6:2] <= 5'b01101;
 				end
-				32'h0000000e: begin  // ERET 例外（准确说不叫异常，但通过这个在跳转到epc的同时清零status的EXL）
+				32'h0000000e: begin  // ERET
 					status_o[1] <= 1'b0;
 				end
 				default: /* default */;

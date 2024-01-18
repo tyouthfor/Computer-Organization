@@ -1,20 +1,33 @@
 `timescale 1ns / 1ps
 
+/*
+	模块名称: mips
+	模块功能: 将数据通路与控制单元封装成普通 MIPS CPU 接口
+	inst ram 接口:
+		pcF					inst ram 的访问地址
+		instrF				从 inst ram 读出的指令
+	data ram 接口
+		data_sram_enM		data ram 的使能信号
+		memwriteM			data ram 的写使能信号
+		aluoutM				data ram 的访问地址
+		writedataM			写 data ram 的数据
+		readdataM			从 data ram 读出的数据
+*/
 module mips(
 	input 	wire 			clk, rst,
 	input	wire[5:0]		ext_int,
-	// IF
+	// inst ram
 	output 	wire[31:0] 		pcF,
 	input 	wire[31:0] 		instrF,
-	// ME
+	// data ram
 	output	wire			data_sram_enM,
 	output 	wire[3:0] 		memwriteM,
-	output 	wire[31:0] 		aluoutM, writedataM,
+	output 	wire[31:0] 		aluoutM,
+	output	wire[31:0]		writedataM,
 	input 	wire[31:0] 		readdataM,
 	// stall
 	input	wire			i_stallF,
 	input	wire			d_stallM,
-	output	wire			div_stallE,
 	// debug
 	output	wire[31:0]		pcW,
 	output					regwrite,
@@ -25,104 +38,125 @@ module mips(
 	output	wire			dataram_except
     );
 	
+	// IF
+	// ID
 	wire[31:0]				instrD;
 	wire					stallD;
-	wire 					regdstE, alusrcE, memtoregE, memtoregM, memtoregW, regwriteW;
-	wire					regwriteE, regwriteM;
-	wire					hilotoregD, hiorloD, hilotoregE, hiorloE, hiwriteE, lowriteE, hiwriteM, lowriteM, hiwriteW, lowriteW, hilotoregM, hilotoregW;
 	wire					immseD;
-	wire					invalidD;
-	wire					ismultE, ismultM, ismultW, isdivE, isdivM, isdivW, signedmultE, signeddivE;
-	wire[5:0] 				alucontrolE;
 	wire 					branchD, jumpD, jumpregD;
-	wire					linkregE, linkdataW;
-	wire					cp0toregE, cp0toregM, cp0toregW, cp0writeM;
-	wire					stallE, flushE, stallM, flushM, stallW, flushW;
+	wire					hilotoregD, hiorloD;
+	wire					invalidD;
+	// EX
+	wire 					regdstE, alusrcE, regwriteE, memtoregE;
+	wire[5:0] 				alucontrolE;
+	wire					linkregE;
+	wire					ismultE, signedmultE, isdivE, signeddivE;
+	wire					hilotoregE, hiorloE, hiwriteE, lowriteE;
+	wire					cp0toregE;
+	wire					stallE, flushE;
+	// ME
+	wire					regwriteM, memtoregM, memweM;
+	wire					ismultM, isdivM;
+	wire					hilotoregM, hiwriteM, lowriteM;
+	wire					cp0toregM, cp0writeM;
 	wire					is_overflow_detectM;
-	wire					memweM;
+	wire					stallM, flushM;
+	// WB
+	wire					regwriteW, memtoregW;
+	wire					linkdataW;
+	wire					ismultW, isdivW;
+	wire					hilotoregW, hiwriteW, lowriteW;
+	wire					cp0toregW;
+	wire					stallW, flushW;
 
 	assign regwrite = regwriteW | hilotoregW | cp0toregW;
 	assign data_sram_enM = memtoregM | memweM;
 
+	// ASCII
+	wire[39:0] ascii;
+    instdec instdec(
+        .instr(instrF),
+        .ascii(ascii)
+    );
+
+	// 控制单元
 	controller c(
 		clk, rst,
+		// IF
 		// ID
 		instrD,
 		stallD,
+		immseD,
 		branchD, jumpD, jumpregD,
 		hilotoregD, hiorloD,
-		immseD,
 		invalidD,
 		// EX
 		stallE, flushE,
-		memtoregE, alusrcE,
-		regdstE, regwriteE,	
-		alucontrolE,
-		hilotoregE, hiorloE, hiwriteE, lowriteE,
-		ismultE, signedmultE,
-		isdivE, signeddivE,
+		regdstE, alusrcE, regwriteE, memtoregE,
 		linkregE,
+		ismultE, signedmultE, isdivE, signeddivE,
+		hilotoregE, hiorloE, hiwriteE, lowriteE,
 		cp0toregE,
+		alucontrolE,
 		// ME
 		stallM, flushM,
-		memtoregM, regwriteM,
-		hiwriteM, lowriteM, hilotoregM,
+		regwriteM, memtoregM, memweM,
 		ismultM, isdivM,
+		hiwriteM, lowriteM, hilotoregM,
 		cp0toregM, cp0writeM,
 		is_overflow_detectM,
-		memweM,
 		// WB
 		stallW, flushW,
-		memtoregW, regwriteW, 
-		hiwriteW, lowriteW, hilotoregW,
-		ismultW, isdivW,
+		regwriteW, memtoregW,
 		linkdataW,
+		ismultW, isdivW,
+		hiwriteW, lowriteW, hilotoregW,
 		cp0toregW
 	);
 
+	// 数据通路
 	datapath dp(
 		clk, rst,
 		ext_int,
 		// IF
-		pcF,
-		instrF,
 		i_stallF,
+		instrF,
+		pcF,
 		// ID
+		immseD,
 		branchD, jumpD, jumpregD,
 		hilotoregD, hiorloD,
-		immseD,
 		invalidD,
 		instrD,
 		stallD,
 		// EX
-		regdstE, alusrcE, memtoregE, regwriteE,
-		hilotoregE, hiorloE, hiwriteE, lowriteE,
+		regdstE, alusrcE, regwriteE, memtoregE,
 		alucontrolE,
-		ismultE, signedmultE,
-		isdivE, signeddivE,
 		linkregE,
+		ismultE, signedmultE, isdivE, signeddivE,
+		hilotoregE, hiorloE, hiwriteE, lowriteE,
 		cp0toregE,
-		div_stallE,
 		stallE, flushE,
 		// ME
-		memtoregM, regwriteM,
-		hiwriteM, lowriteM, hilotoregM,
-		ismultM, isdivM,
+		d_stallM,
 		readdataM,
+		regwriteM, memtoregM,
+		ismultM, isdivM,
+		hilotoregM, hiwriteM, lowriteM,
 		cp0toregM, cp0writeM,
 		is_overflow_detectM,
 		aluoutM, writedataM,
 		memwriteM,
 		stallM, flushM,
-		d_stallM,
 		// WB
-		memtoregW, regwriteW,
-		hiwriteW, lowriteW, hilotoregW,
-		ismultW, isdivW,
+		regwriteW, memtoregW,
 		linkdataW,
+		ismultW, isdivW,
+		hilotoregW, hiwriteW, lowriteW,
 		cp0toregW,
-		pcW, writeregW, resultW,
 		stallW, flushW,
+		// debug
+		pcW, writeregW, resultW,
 		// except
 		exceptflush,
 		dataram_except

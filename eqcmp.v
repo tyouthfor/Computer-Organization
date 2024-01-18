@@ -1,6 +1,17 @@
 `timescale 1ns / 1ps
 `include "defines.vh"
 
+/*
+	模块名称: eqcmp
+	模块功能: 分支跳转指令的条件判断单元
+	输入:
+		a			第一操作数
+		b			第二操作数
+		op			指令的 opcode
+		rt			指令的 rt
+	输出:
+		y			0-不跳转, 1-跳转
+*/
 module eqcmp(
 	input 	wire[31:0] 		a, b,
 	input   wire[5:0]  		op,

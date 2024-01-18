@@ -1,39 +1,40 @@
 `timescale 1ns / 1ps
 
+/*
+	模块名称: controller
+	模块功能: 控制单元, 在 ID 阶段根据指令产生相应的控制信号, 并在需要时传给数据通路
+*/
 module controller(
 	input 	wire 		clk, rst,
 	// 1.IF
 	// 2.ID
 	input 	wire[31:0]	instrD,
 	input	wire		stallD,
+	output	wire		immseD,
 	output 	wire 		branchD, jumpD, jumpregD,
 	output	wire		hilotoregD, hiorloD,
-	output	wire		immseD,
 	output	wire		invalidD,
 	// 3.EX
 	input 	wire 		stallE, flushE,
-	output 	wire 		memtoregE, alusrcE,
-	output 	wire 		regdstE, regwriteE,
-	output 	wire[5:0] 	alucontrolE,
-	output	wire		hilotoregE, hiorloE, hiwriteE, lowriteE,
-	output	wire		ismultE, signedmultE,
-	output	wire		isdivE, signeddivE,
+	output	wire		regdstE, alusrcE, regwriteE, memtoregE,
 	output	wire		linkregE,
+	output	wire		ismultE, signedmultE, isdivE, signeddivE,
+	output	wire		hilotoregE, hiorloE, hiwriteE, lowriteE,
 	output	wire		cp0toregE,
+	output 	wire[4:0] 	alucontrolE,
 	// 4.ME
 	input	wire		stallM, flushM,
-	output 	wire 		memtoregM, regwriteM,
-	output	wire		hiwriteM, lowriteM, hilotoregM,
+	output	wire		regwriteM, memtoregM, memweM,
 	output	wire		ismultM, isdivM,
+	output	wire		hiwriteM, lowriteM, hilotoregM,
 	output	wire		cp0toregM, cp0writeM,
 	output	wire		is_overflow_detectM,
-	output	wire		memweM,
 	// 5.WB
 	input	wire		stallW, flushW,
-	output 	wire 		memtoregW, regwriteW, 
-	output	wire		hiwriteW, lowriteW, hilotoregW,
-	output	wire		ismultW, isdivW,
+	output 	wire 		regwriteW, memtoregW,
 	output	wire		linkdataW,
+	output	wire		ismultW, isdivW,
+	output	wire		hiwriteW, lowriteW, hilotoregW,
 	output	wire		cp0toregW
     );
 	
@@ -41,143 +42,79 @@ module controller(
 	// 2.ID
 	wire[5:0]			functD;
 	wire[3:0] 			aluopD;
-	wire 				memtoregD, alusrcD, regdstD, regwriteD;
-	wire				hiwriteD, lowriteD;
-	wire[5:0] 			alucontrolD;
-	wire				ismultD, signedmultD;
-	wire				isdivD, signeddivD;
+	wire[4:0] 			alucontrolD;
+	wire				regdstD, alusrcD, regwriteD, memtoregD, memweD;
 	wire				linkregD, linkdataD;
+	wire				ismultD, signedmultD, isdivD, signeddivD;
+	wire				hiwriteD, lowriteD;
 	wire				cp0toregD, cp0writeD;
 	wire				is_overflow_detectD;
-	wire				memweD;
 	// 3.EX
+	wire				memweE;
 	wire				linkdataE;
 	wire				cp0writeE;
 	wire				is_overflow_detectE;
-	wire				memweE;
 	// 4.ME
 	wire				linkdataM;
 	// 5.WB
 
-	// main decoder 和 ALU decoder
-	maindec md(
-		instrD,
-		stallD,
-		regdstD, alusrcD, memtoregD, branchD, jumpD, jumpregD,
-		regwriteD,
-		hilotoregD, hiorloD, hiwriteD, lowriteD,
-		immseD, linkregD, linkdataD,
-		ismultD, signedmultD, isdivD, signeddivD,
-		invalidD, cp0toregD, cp0writeD,
-		is_overflow_detectD,
-		memweD,
-		aluopD
-	);
-	aludec ad(functD, aluopD, alucontrolD);
-
 	assign functD = instrD[5:0];
-	// assign pcsrcD = branchD & equalD;
+
+	// 主译码器
+	maindec md(
+		.instr(instrD), .stallD(stallD),
+		.regdst(regdstD), .alusrc(alusrcD), .regwrite(regwriteD), .memtoreg(memtoregD), .memwe(memweD),
+		.immse(immseD),
+		.branch(branchD), .jump(jumpD), .jumpreg(jumpregD), 
+		.linkreg(linkregD), .linkdata(linkdataD),
+		.ismult(ismultD), .signedmult(signedmultD), .isdiv(isdivD), .signeddiv(signeddivD),
+		.hilotoreg(hilotoregD), .hiorlo(hiorloD), .hiwrite(hiwriteD), .lowrite(lowriteD),
+		.cp0toreg(cp0toregD), .cp0write(cp0writeD),
+		.is_overflow_detect(is_overflow_detectD), .invalid(invalidD), .aluop(aluopD)
+	);
+
+	// ALU 译码器
+	aludec ad(
+		.funct(functD), .aluop(aluopD), .alucontrol(alucontrolD)
+	);
 
 	// 流水线寄存器
-	// ID/EX
-	flopenrc #(10) reg1E(
-		clk, rst, ~stallE, flushE,
-		{memtoregD, alusrcD, regdstD, regwriteD, alucontrolD},
-		{memtoregE, alusrcE, regdstE, regwriteE, alucontrolE}
+	flopenrc #(32) regE(
+		.clk(clk), .rst(rst), .en(~stallE), .clear(flushE),
+		.din(
+			{regdstD, alusrcD, regwriteD, memtoregD, memweD, linkregD, linkdataD, alucontrolD,
+			ismultD, signedmultD, isdivD, signeddivD, hilotoregD, hiorloD, hiwriteD, lowriteD,
+			cp0toregD, cp0writeD, is_overflow_detectD}
+		),
+		.dout(
+			{regdstE, alusrcE, regwriteE, memtoregE, memweE, linkregE, linkdataE, alucontrolE,
+			ismultE, signedmultE, isdivE, signeddivE, hilotoregE, hiorloE, hiwriteE, lowriteE,
+			cp0toregE, cp0writeE, is_overflow_detectE}
+		)
 	);
-	flopenrc #(4) reg2E(
-		clk, rst, ~stallE, flushE,
-		{hilotoregD, hiorloD, hiwriteD, lowriteD},
-		{hilotoregE, hiorloE, hiwriteE, lowriteE}
+	flopenrc #(32) regM(
+		.clk(clk), .rst(rst), .en(~stallM), .clear(flushM),
+		.din(
+			{regwriteE, memtoregE, memweE, linkdataE,
+			ismultE, isdivE, hilotoregE, hiwriteE, lowriteE,
+			cp0toregE, cp0writeE, is_overflow_detectE}
+		),
+		.dout(
+			{regwriteM, memtoregM, memweM, linkdataM,
+			ismultM, isdivM, hilotoregM, hiwriteM, lowriteM,
+			cp0toregM, cp0writeM, is_overflow_detectM}
+		)
 	);
-	flopenrc #(4) reg3E(
-		clk, rst, ~stallE, flushE,
-		{ismultD, signedmultD, isdivD, signeddivD},
-		{ismultE, signedmultE, isdivE, signeddivE}
-	);
-	flopenrc #(2) reg4E(
-		clk, rst, ~stallE, flushE,
-		{linkregD, linkdataD},
-		{linkregE, linkdataE}
-	);
-	flopenrc #(2) reg5E(
-		clk, rst, ~stallE, flushE,
-		{cp0toregD, cp0writeD}, 
-		{cp0toregE, cp0writeE}
-	);
-	flopenrc #(1) reg6E(
-		clk, rst, ~stallE, flushE,
-		{is_overflow_detectD},
-		{is_overflow_detectE}
-	);
-	flopenrc #(1) reg7E(
-		clk, rst, ~stallE, flushE,
-		{memweD},
-		{memweE}
-	);
-
-	// EX/ME
-	flopenrc #(2) reg1M(
-		clk, rst, ~stallM, flushM,
-		{memtoregE, regwriteE},
-		{memtoregM, regwriteM}
-	);
-	flopenrc #(3) reg2M(
-		clk, rst, ~stallM, flushM,
-		{hiwriteE, lowriteE, hilotoregE},
-		{hiwriteM, lowriteM, hilotoregM}
-	);
-	flopenrc #(2) reg3M(
-		clk, rst, ~stallM, flushM,
-		{ismultE, isdivE},
-		{ismultM, isdivM}
-	);
-	flopenrc #(1) reg4M(
-		clk, rst, ~stallM, flushM,
-		{linkdataE},
-		{linkdataM}
-	);
-	flopenrc #(2) reg5M(
-		clk, rst, ~stallM, flushM,
-		{cp0toregE, cp0writeE}, 
-		{cp0toregM, cp0writeM}
-	);
-	flopenrc #(1) reg6M(
-		clk, rst, ~stallM, flushM,
-		{is_overflow_detectE},
-		{is_overflow_detectM}
-	);
-	flopenrc #(1) reg7M(
-		clk, rst, ~stallM, flushM,
-		{memweE},
-		{memweM}
-	);
-
-	// ME/WB
-	flopenrc #(2) reg1W(
-		clk, rst, ~stallW, flushW,
-		{memtoregM, regwriteM},
-		{memtoregW, regwriteW}
-	);
-	flopenrc #(3) reg2W(
-		clk, rst, ~stallW, flushW,
-		{hiwriteM, lowriteM, hilotoregM},
-		{hiwriteW, lowriteW, hilotoregW}
-	);
-	flopenrc #(2) reg3W(
-		clk, rst, ~stallW, flushW,
-		{ismultM, isdivM},
-		{ismultW, isdivW}
-	);
-	flopenrc #(1) reg4W(
-		clk, rst, ~stallW, flushW,
-		{linkdataM},
-		{linkdataW}
-	);
-	flopenrc #(1) reg5W(
-		clk, rst, ~stallW, flushW,
-		{cp0toregM},
-		{cp0toregW}
+	flopenrc #(32) regW(
+		.clk(clk), .rst(rst), .en(~stallW), .clear(flushW),
+		.din(
+			{regwriteM, memtoregM, linkdataM, ismultM, isdivM,
+			hilotoregM, hiwriteM, lowriteM, cp0toregM}
+		),
+		.dout(
+			{regwriteW, memtoregW, linkdataW, ismultW, isdivW, 
+			hilotoregW, hiwriteW, lowriteW, cp0toregW}
+		)
 	);
 
 endmodule

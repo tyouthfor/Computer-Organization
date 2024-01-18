@@ -1,12 +1,23 @@
 `timescale 1ns / 1ps
 
+/*
+    æ¨¡å—åç§°: mips_sram
+    æ¨¡å—åŠŸèƒ½: å°† MIPS CPU å°è£…æˆ sram æ¥å£
+    inst sram æ¥å£:
+        inst_sram_en        inst ram çš„ä½¿èƒ½ä¿¡å·
+        inst_sram_wen       inst ram çš„å†™ä½¿èƒ½ä¿¡å·
+        inst_sram_addr      inst ram çš„è®¿é—®åœ°å€
+        inst_sram_wdata     å†™ inst ram çš„æ•°æ®
+        inst_sram_rdata     ä» inst ram è¯»å‡ºçš„æ•°æ®
+    data sram æ¥å£:
+        data_sram_en        data ram çš„ä½¿èƒ½ä¿¡å·
+        data_sram_wen       data ram çš„å†™ä½¿èƒ½ä¿¡å·
+        data_sram_addr      data ram çš„è®¿é—®åœ°å€
+        data_sram_wdata     å†™ data ram çš„æ•°æ®
+        data_sram_rdata     ä» data ram è¯»å‡ºçš„æ•°æ®
+*/
 module mips_sram(
-    /*
-        Ä£¿éÃû³Æ: mips_sram
-        Ä£¿é¹¦ÄÜ: ½« MIPS CPU ·â×°³É sram ½Ó¿Ú
-    */
-    input   wire            clk,
-    input   wire            rst,
+    input   wire            clk, rst,
     input	wire[5:0]		ext_int,
     // inst sram
     output  wire            inst_sram_en,
@@ -14,91 +25,55 @@ module mips_sram(
     output  wire[31:0]      inst_sram_addr,
     output  wire[31:0]      inst_sram_wdata,
     input   wire[31:0]      inst_sram_rdata,
-    input   wire            i_stall,
     // data sram
     output  wire            data_sram_en,
     output  wire[3:0]       data_sram_wen,
     output  wire[31:0]      data_sram_addr,
     output  wire[31:0]      data_sram_wdata,
     input   wire[31:0]      data_sram_rdata,
-    input   wire            d_stall,
     // debug
     output  wire[31:0]      debug_wb_pc,
     output  wire[3:0]       debug_wb_rf_wen,
     output  wire[4:0]       debug_wb_rf_wnum,
     output  wire[31:0]      debug_wb_rf_wdata,
     // stall
-    output  wire            div_stall,
+    input   wire            i_stall,
+    input   wire            d_stall,
     // except
     output  wire            exceptflush,
     output  wire            dataram_except
     );
 
-	wire [31:0]     pc;             // ¶Á inst_sram µÄµØÖ·
-	wire [31:0]     instr;          // ´Ó inst_sram ÖĞ¶Á³öµÄÖ¸Áî
+    wire regwriteW;
 
-	wire [3:0]      memwrite;       // data_sram µÄĞ´Ê¹ÄÜĞÅºÅ
-	wire [31:0]     aluout;         // ¶Á/Ğ´ data_sram µÄµØÖ·
-    wire [31:0]     writedata;      // Ğ´Èë data_sram µÄÊı¾İ
-    wire [31:0]     readdata;       // ´Ó data_sram ÖĞ¶Á³öµÄÊı¾İ
-
-    wire [31:0]     pcW;
-    wire            regwriteW;
-    wire [4:0]      writeregW;
-    wire [31:0]     resultW;
-
-    wire [39:0]     ascii;
+    assign inst_sram_en = 1'b1;
+    assign inst_sram_wen = 4'b0;
+    assign inst_sram_wdata = 32'b0;
+    assign debug_wb_rf_wen = {4{regwriteW}};
 
     mips mips(
-        .clk(clk),
-        .rst(rst),
+        .clk(clk), .rst(rst),
         .ext_int(ext_int),
-        // IF
-        .pcF(pc), 
-        .instrF(instr), 
-        // ME
+        // inst ram
+        .pcF(inst_sram_addr), 
+        .instrF(inst_sram_rdata), 
+        // data ram
         .data_sram_enM(data_sram_en),
-        .memwriteM(memwrite),
-        .aluoutM(aluout),
-        .writedataM(writedata),
-        .readdataM(readdata),
+        .memwriteM(data_sram_wen),
+        .aluoutM(data_sram_addr),
+        .writedataM(data_sram_wdata),
+        .readdataM(data_sram_rdata),
         // stall
         .i_stallF(i_stall),
         .d_stallM(d_stall),
-        .div_stallE(div_stall),
         // debug
-        .pcW(pcW),
+        .pcW(debug_wb_pc),
         .regwrite(regwriteW),
-        .writeregW(writeregW),
-        .resultW(resultW),
+        .writeregW(debug_wb_rf_wnum),
+        .resultW(debug_wb_rf_wdata),
         // except
         .exceptflush(exceptflush),
         .dataram_except(dataram_except)
-    );
-
-    // inst_sram
-    assign inst_sram_en         = 1'b1;
-    assign inst_sram_wen        = 4'b0;
-    assign inst_sram_addr       = pc;
-    assign inst_sram_wdata      = 32'b0;
-    assign instr                = inst_sram_rdata;
-
-    // data_sram
-    assign data_sram_wen        = memwrite;
-    assign data_sram_addr       = aluout;
-    assign data_sram_wdata      = writedata;
-    assign readdata             = data_sram_rdata;
-
-    // debug
-    assign debug_wb_pc          = pcW;
-    assign debug_wb_rf_wen      = {4{regwriteW}};
-    assign debug_wb_rf_wnum     = writeregW;
-    assign debug_wb_rf_wdata    = resultW;
-
-    // ascii
-    instdec instdec(
-        .instr(instr),
-        .ascii(ascii)
     );
 
 endmodule

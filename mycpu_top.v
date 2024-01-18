@@ -1,6 +1,11 @@
+`timescale 1ns / 1ps
+
+/*
+    模块名称: mycpu_top
+    模块功能: 将 sram-like 接口的 MIPS CPU 封装成 AXI 接口, 并连接 Cache
+*/
 module mycpu_top(
-    input   wire            aclk,
-    input   wire            aresetn,
+    input   wire            aclk, aresetn,
     input   wire[5:0]       ext_int,
     // AXI
     // (1) ar
@@ -90,9 +95,9 @@ module mycpu_top(
 
     wire            dataram_except;
 
+    // 1. sram-like 接口的 MIPS CPU
     mips_sramlike mips_sramlike(
-        .clk(aclk),
-        .rst(aresetn),
+        .clk(aclk), .rst(aresetn),
         .ext_int(ext_int),
         // inst sram-like
         .inst_req(inst_req),
@@ -121,20 +126,22 @@ module mycpu_top(
         .dataram_except(dataram_except)
     );
 
+    // 2. 地址转换单元
     wire[31:0] inst_paddr, data_paddr;
     wire no_dcache;
-
+    
     mmu mmu(
 		.inst_vaddr(inst_addr),
+        .data_vaddr(data_addr),
 		.inst_paddr(inst_paddr),
-		.data_vaddr(data_addr),
 		.data_paddr(data_paddr),
 		.no_dcache(no_dcache)
 	);
 
+    // 3. i_cache
     i_cache_direct_map i_cache(
-        .clk(aclk),
-        .rst(~aresetn),
+        .clk(aclk), .rst(~aresetn),
+        // MIPS CPU inst sram-like
         .cpu_inst_req(inst_req),
         .cpu_inst_wr(inst_wr),
         .cpu_inst_size(inst_size),
@@ -143,7 +150,7 @@ module mycpu_top(
         .cpu_inst_rdata(inst_rdata),
         .cpu_inst_addr_ok(inst_addr_ok),
         .cpu_inst_data_ok(inst_data_ok),
-        // i cache
+        // Cache inst sram-like
         .cache_inst_req(cache_inst_req),
         .cache_inst_wr(cache_inst_wr),
         .cache_inst_size(cache_inst_size),
@@ -154,9 +161,10 @@ module mycpu_top(
         .cache_inst_data_ok(cache_inst_data_ok)
     );
 
+    // 4. d_cache
     d_cache_write_through d_cache(
-        .clk(aclk),
-        .rst(~aresetn),
+        .clk(aclk), .rst(~aresetn),
+        // MIPS CPU data sram-like
         .cpu_data_req(data_req),
         .cpu_data_wr(data_wr),
         .cpu_data_size(data_size),
@@ -165,7 +173,7 @@ module mycpu_top(
         .cpu_data_rdata(data_rdata),
         .cpu_data_addr_ok(data_addr_ok),
         .cpu_data_data_ok(data_data_ok),
-        // i cache
+        // Cache data sram-like
         .cache_data_req(cache_data_req),
         .cache_data_wr(cache_data_wr),
         .cache_data_size(cache_data_size),
@@ -174,13 +182,15 @@ module mycpu_top(
         .cache_data_rdata(cache_data_rdata),
         .cache_data_addr_ok(cache_data_addr_ok),
         .cache_data_data_ok(cache_data_data_ok),
-        // exceot
+        // except
         .dataram_except(dataram_except),
+        // no_dcache
         .no_dcache(no_dcache)
     );
-        cpu_axi_interface axi_interface(
-        .clk(aclk),
-        .resetn(aresetn),
+
+    // 5. sram-like 接口转 AXI 接口
+    cpu_axi_interface axi_interface(
+        .clk(aclk), .rst(aresetn),
         // inst sram-like
         .inst_req(cache_inst_req),
         .inst_wr(cache_inst_wr),

@@ -1,5 +1,9 @@
 `timescale 1ns / 1ps
 
+/*
+    æ¨¡å—åç§°: data_sramlike_interface
+    æ¨¡å—åŠŸèƒ½: data sram æ¥å£ä¸ data sram-like æ¥å£çš„è½¬æ¥æ¡¥
+*/
 module data_sramlike_interface(
     input   wire            clk, rst,
     // data sram
@@ -8,7 +12,6 @@ module data_sramlike_interface(
     input   wire[31:0]      data_sram_addr,
     input   wire[31:0]      data_sram_wdata,
     output  wire[31:0]      data_sram_rdata,
-    output  wire            d_stall,
     // data sram-like
     output  wire            data_req,
     output  wire            data_wr,
@@ -18,45 +21,46 @@ module data_sramlike_interface(
     input   wire[31:0]      data_rdata,
     input   wire            data_addr_ok,
     input   wire            data_data_ok,
-
-    input   wire            div_stall
+    // stall
+    output  wire            d_stall
     );
 
-    reg                     addr_rcv;
-    reg                     data_rcv;
+    reg                     addr_rcv, data_rcv;
     reg [31:0]              data_rdata_save;
 
-
+    // addr_rcv
     always @(posedge clk) begin
         if (rst) begin
             addr_rcv <= 1'b0;
         end
         else if (data_req & data_addr_ok & ~data_data_ok) begin
-            addr_rcv <= 1'b1;  // µØÖ·ÎÕÊÖ³É¹¦
+            addr_rcv <= 1'b1;  // åœ°å€æ¡æ‰‹æˆåŠŸ
         end
         else if (data_data_ok) begin
-            addr_rcv <= 1'b0;  // Êı¾İÎÕÊÖ³É¹¦
+            addr_rcv <= 1'b0;  // æ•°æ®æ¡æ‰‹æˆåŠŸ
         end
     end
 
+    // data_rcv
     always @(posedge clk) begin
         if (rst) begin
             data_rcv <= 1'b0; 
         end
         else if (data_data_ok) begin
-            data_rcv <= 1'b1;  // Êı¾İÎÕÊÖ³É¹¦
+            data_rcv <= 1'b1;  // æ•°æ®æ¡æ‰‹æˆåŠŸ
         end
-        else if (~d_stall & ~div_stall) begin
+        else if (~d_stall) begin
             data_rcv <= 1'b0;
         end
     end
 
+    // data_rdata_save
     always @(posedge clk) begin
         if (rst) begin
             data_rdata_save <= 32'b0;
         end
         else if (data_data_ok) begin
-            data_rdata_save <= data_rdata;  // Êı¾İÎÕÊÖ³É¹¦
+            data_rdata_save <= data_rdata;  // æ•°æ®æ¡æ‰‹æˆåŠŸ
         end
     end
 
@@ -67,9 +71,9 @@ module data_sramlike_interface(
                               (data_sram_wen == 4'b0011 | data_sram_wen == 4'b1100 ) ? 2'b01 : 2'b10;
     assign data_addr        = data_sram_addr;
     assign data_wdata       = data_sram_wdata;
-
     // sram
     assign data_sram_rdata  = data_rdata_save;
+    // d_stall
     assign d_stall          = data_sram_en & ~data_rcv;
 
 endmodule

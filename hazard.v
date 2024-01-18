@@ -1,51 +1,55 @@
 `timescale 1ns / 1ps
 `include "defines.vh"
 
+/*
+	模块名称: hazard
+	模块功能: 数据冒险检测及处理模块, 产生数据前推的选择信号以及必要的流水线暂停信号
+*/
 module hazard(
 	// IF
 	input	wire		i_stallF,
 	output 	wire 		stallF, flushF,
 	// ID
 	input 	wire[4:0] 	rsD, rtD, rdD,
-	input 	wire 		branchD, hilotoregD, jumpregD,
+	input 	wire 		branchD, jumpregD,
+	input	wire		hilotoregD,
 	output 	reg	[2:0]	forward_branchjraD, forward_branchjrbD, 
 	output 	wire 		stallD, flushD,
 	// EX
 	input 	wire[4:0] 	rsE, rtE, rdE,
 	input 	wire[4:0] 	writeregE,
 	input 	wire 		regwriteE, memtoregE,
-	input	wire		hilotoregE, hiorloE, hiwriteE, lowriteE,
 	input	wire		isdivE, divreadyE,
+	input	wire		hilotoregE, hiorloE, hiwriteE, lowriteE,
 	input	wire		cp0toregE,
 	output 	reg [2:0] 	forwardaE, forwardbE,
 	output	reg [2:0]	forward_mfhiloE,
 	output	reg [1:0]	forward_mthiloE,
-	output	wire		divstallE,
 	output 	wire 		stallE, flushE,
 	// ME
+	input	wire		d_stallM,
 	input	wire[4:0]	rsM, rdM,
 	input 	wire[4:0] 	writeregM,
 	input 	wire 		regwriteM, memtoregM,
-	input	wire		hiwriteM, lowriteM, hilotoregM,
 	input	wire		ismultM, isdivM,
+	input	wire		hilotoregM, hiwriteM, lowriteM,
 	input	wire		cp0toregM, cp0writeM,
 	input	wire[31:0]	excepttypeM,
 	output	reg			forward_mthiloM,
 	output	wire		forwardcp0M,
-	input	wire		d_stallM,
 	output	wire		stallM, flushM,
 	// WB
 	input 	wire[4:0] 	writeregW,
 	input 	wire 		regwriteW,
-	input	wire		hiwriteW, lowriteW,
 	input	wire		ismultW, isdivW,
+	input	wire		hiwriteW, lowriteW,
 	input	wire		cp0toregW,
 	output	wire		stallW, flushW,
 	// except
 	output	wire		exceptflush
     );
 
-	wire 				lwstallD, branchjrstallD, mfhistallD;
+	wire 				lwstallD, branchjrstallD, mfhistallD, divstallE;
 	
 	// 1. ALU 的 RAW 数据冒险
 		// (1) ADD, ADD/LW -- aluoutM (ME --> EX)
@@ -185,11 +189,14 @@ module hazard(
 		end
 	end
 
-	assign branchjrstallD = (branchD | jumpregD) &
-			((regwriteE & (writeregE == rsD | writeregE == rtD)) |
-			 (memtoregM & (writeregM == rsD | writeregM == rtD)) |
-			 (memtoregE & (writeregE == rsD | writeregE == rtD)) |
-			 (cp0toregE & (writeregE == rsD | writeregE == rtD)));
+	assign branchjrstallD = (
+		(branchD | jumpregD) & (
+			(regwriteE & (writeregE == rsD | writeregE == rtD)) |
+			(memtoregM & (writeregM == rsD | writeregM == rtD)) |
+			(memtoregE & (writeregE == rsD | writeregE == rtD)) |
+			(cp0toregE & (writeregE == rsD | writeregE == rtD))
+		)
+	);
 
 	// 4. MFHI 的数据冒险
 		// (1) DIV, MFHI -- multdivresultM (ME --> EX)
@@ -220,22 +227,22 @@ module hazard(
 		//     MFHI:      IF x  x  ID EX ME WB
 	always @(*) begin
 		forward_mfhiloE = 3'b000;
-		if ((ismultM | isdivM) & hilotoregE & hiorloE == 1'b0) begin
+		if ((ismultM | isdivM) & hilotoregE & ~hiorloE) begin
 			forward_mfhiloE = 3'b001;  // multdivresultM 高 32 位
 		end
-		else if ((ismultM | isdivM) & hilotoregE & hiorloE == 1'b1) begin
+		else if ((ismultM | isdivM) & hilotoregE & hiorloE) begin
 			forward_mfhiloE = 3'b010;  // multdivresultM 低 32 位
 		end
-		else if ((ismultW | isdivW) & hilotoregE & hiorloE == 1'b0) begin
+		else if ((ismultW | isdivW) & hilotoregE & ~hiorloE) begin
 			forward_mfhiloE = 3'b011;  // multdivresultW 高 32 位
 		end
-		else if ((ismultW | isdivW) & hilotoregE & hiorloE == 1'b1) begin
+		else if ((ismultW | isdivW) & hilotoregE & hiorloE) begin
 			forward_mfhiloE = 3'b100;  // multdivresultW 低 32 位
 		end
-		else if ((hiwriteM & hilotoregE & hiorloE == 1'b0) | (lowriteM & hilotoregE & hiorloE == 1'b1)) begin
+		else if ((hiwriteM & hilotoregE & ~hiorloE) | (lowriteM & hilotoregE & hiorloE)) begin
 			forward_mfhiloE = 3'b101;  // src_mthiloM
 		end
-		else if ((hiwriteW & hilotoregE & hiorloE == 1'b0) | (lowriteW & hilotoregE & hiorloE == 1'b1)) begin
+		else if ((hiwriteW & hilotoregE & ~hiorloE) | (lowriteW & hilotoregE & hiorloE)) begin
 			forward_mfhiloE = 3'b110;  // src_mthiloW
 		end
 		else begin
@@ -294,17 +301,17 @@ module hazard(
 	assign forwardcp0M = cp0writeM & cp0toregE & rdM == rdE;
 
 
-	// 除法器流水线暂停
+	// 除法器工作流水线暂停
 	assign divstallE = isdivE & ~divreadyE;
 
 	// 触发例外流水线刷新
 	assign exceptflush = (excepttypeM != 0) ? 1'b1 : 1'b0;
 	
 	// stall: 流水线暂停, 寄存器中的值保持不变
-	assign stallF = i_stallF | lwstallD | branchjrstallD | mfhistallD | divstallE | d_stallM;
-	assign stallD = i_stallF | lwstallD | branchjrstallD | mfhistallD | divstallE | d_stallM;
-	assign stallE = divstallE | d_stallM;
-	assign stallM = d_stallM;
+	assign stallF = stallD;
+	assign stallD = stallE | lwstallD | branchjrstallD | mfhistallD | i_stallF;
+	assign stallE = stallM | divstallE;
+	assign stallM = stallW;
 	assign stallW = d_stallM;
 
 	// flush: 流水线刷新, 寄存器中的值清零

@@ -1,14 +1,17 @@
 `timescale 1ns / 1ps
 
+/*
+    æ¨¡å—åç§°: inst_sramlike_interface
+    æ¨¡å—åŠŸèƒ½: inst sram æ¥å£ä¸ inst sram-like æ¥å£çš„è½¬æ¥æ¡¥
+*/
 module inst_sramlike_interface (
-    input wire              clk, rst,
+    input   wire            clk, rst,
     // inst sram
     input   wire            inst_sram_en,
     input   wire[3:0]       inst_sram_wen,
     input   wire[31:0]      inst_sram_addr,
     input   wire[31:0]      inst_sram_wdata,
     output  wire[31:0]      inst_sram_rdata,
-    output  wire            i_stall,
     // inst sram-like
     output  wire            inst_req,
     output  wire            inst_wr,
@@ -18,15 +21,16 @@ module inst_sramlike_interface (
     input   wire[31:0]      inst_rdata,
     input   wire            inst_addr_ok,
     input   wire            inst_data_ok,
-
-    input   wire            div_stall,
+    // stall
+    output  wire            i_stall,
+    // except
     input   wire            exceptflush
     );
 
-    reg                     addr_rcv;
-    reg                     data_rcv;
+    reg                     addr_rcv, data_rcv;
     reg [31:0]              inst_rdata_save;
 
+    // ä¾‹å¤–å¤„ç†çŠ¶æ€æœº
     reg                     except;
     reg [1:0]               state;
 
@@ -44,14 +48,14 @@ module inst_sramlike_interface (
                     end
                 end
 
-                2'b01: begin  // ÊÕµ½µÚÒ»¸ö inst_data_ok, ÎªÒì³£Ö¸ÁîÏÂÒ»ÌõÖ¸Áî, ¼ÌĞø i_stall
+                2'b01: begin  // æ”¶åˆ°ç¬¬ä¸€ä¸ª inst_data_ok, ä¸ºä¾‹å¤–æŒ‡ä»¤ä¸‹ä¸€æ¡æŒ‡ä»¤, ç»§ç»­ i_stall
                     if (inst_data_ok) begin
                         except <= 1'b1;
                         state <= 2'b10;
                     end
                 end
 
-                2'b10: begin  // ÊÕµ½µÚ¶ş¸ö inst_data_ok, Îª BFC00380, ²»ÔÙ i_stall
+                2'b10: begin  // æ”¶åˆ°ç¬¬äºŒä¸ª inst_data_ok, ä¸º BFC00380, ä¸å† i_stall
                     if (inst_data_ok) begin
                         except <= 1'b0;
                         state <= 2'b00;
@@ -66,35 +70,33 @@ module inst_sramlike_interface (
         end
     end
 
-    // ÔÚ´¦ÀíÍêÕû¸öÊÂÎñºó²Å½« addr_rcv ºÍ data_rcv À­µÍ
+    // addr_rcv
     always @(posedge clk) begin
-        //±£Ö¤ÏÈinst_reqÔÙaddr_rcv£»Èç¹ûaddr_okÍ¬Ê±data_ok£¬ÔòÓÅÏÈdata_ok
         if (rst) begin
             addr_rcv <= 1'b0;
         end
         else if (inst_req & inst_addr_ok & ~inst_data_ok) begin
-            addr_rcv <= 1'b1;  // µØÖ·ÎÕÊÖ³É¹¦
+            addr_rcv <= 1'b1;  // åœ°å€æ¡æ‰‹æˆåŠŸ
         end
         else if (inst_data_ok) begin
-            addr_rcv <= 1'b0;  // Êı¾İÎÕÊÖ³É¹¦
+            addr_rcv <= 1'b0;  // æ•°æ®æ¡æ‰‹æˆåŠŸ
         end
     end
 
+    // data_rcv
     always @(posedge clk) begin
         if (rst) begin
             data_rcv <= 1'b0;
         end
         else if (inst_data_ok) begin
-            data_rcv <= 1'b1;  // Êı¾İÎÕÊÖ³É¹¦
+            data_rcv <= 1'b1;  // æ•°æ®æ¡æ‰‹æˆåŠŸ
         end
-        else if (~i_stall & ~div_stall) begin
-            data_rcv <= 1'b0;
-        end
-        else if (except) begin
+        else if (~i_stall | except) begin
             data_rcv <= 1'b0;
         end
     end
 
+    // inst_rdata_save
     always @(posedge clk) begin
         if (rst) begin
             inst_rdata_save <= 32'b0;
@@ -110,9 +112,9 @@ module inst_sramlike_interface (
     assign inst_size        = 2'b10;
     assign inst_addr        = inst_sram_addr;
     assign inst_wdata       = 32'b0;
-
-    //sram
+    // sram
     assign inst_sram_rdata  = inst_rdata_save;
+    // i_stall
     assign i_stall          = (inst_sram_en & ~data_rcv) | except;
 
 endmodule
